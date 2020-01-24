@@ -1,0 +1,18 @@
+name = "hebi"
+uuid = "0f3c6009-c6ee-42d1-a5bd-9b55e21ee1f9"
+authors = ["klowrey <kendall.lowrey@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Lyceum = "f25b5985-59c0-418b-a573-42c079f3f644"
+LyceumAI = "6917c76a-ac01-4302-a33e-8c456ab70f71"
+LyceumBase = "db31fed1-ca1e-4084-8a49-12fae1996a55"
+LyceumMuJoCo = "48b9757e-04b8-4dbf-b6ed-75c13d9e4026"
+LyceumMuJoCoViz = "409fd311-7925-44f6-a514-6be572b34fdd"
+MuJoCo = "93189219-7048-461c-94ec-443a161ed927"
+Shapes = "175de200-b73b-11e9-28b7-9b5b306cec37"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+UniversalLogger = "5c5e3362-9445-4819-9f95-51c44c51adeb"
+UnsafeArrays = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
