@@ -146,7 +146,6 @@
     </contact>
     <actuator>
         <!-- 
--->
         <motor gear="100" joint="HEBI/base/X8_9"      name="base"/> 
         <motor gear="100" joint="HEBI/shoulder/X8_16" name="shoulder"/>
         <motor gear="100" joint="HEBI/elbow/X8_9"     name="elbow"/>
@@ -154,6 +153,7 @@
         <motor gear="100" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
         <motor gear="100" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
         <motor gear="100" joint="HEBI/chopstick/X5_1" name="chop"/>
+-->
 
         <position kp="100" joint="HEBI/base/X8_9"      name="pbase"/>
         <position kp="100" joint="HEBI/shoulder/X8_16" name="pshoulder"/>
@@ -163,7 +163,6 @@
         <position kp="100" joint="HEBI/wrist3/X5_1"    name="pwrist3"/>
         <position kp="100" joint="HEBI/chopstick/X5_1" name="pchop"/>
         <!--
-        -->
 
         <velocity kv="10" joint="HEBI/base/X8_9"       name="vbase"/>
         <velocity kv="10" joint="HEBI/shoulder/X8_16"  name="vshoulder"/>
@@ -172,6 +171,7 @@
         <velocity kv="8" joint="HEBI/wrist2/X5_1"     name="vwrist2"/>
         <velocity kv="8" joint="HEBI/wrist3/X5_1"     name="vwrist3"/>
         <velocity kv="5" joint="HEBI/chopstick/X5_1"  name="vchop"/>
+        -->
 
     </actuator>
 
