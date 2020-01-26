@@ -10,6 +10,7 @@ using Distributions, Distances
 using MuJoCo
 
 using Optim
+using LineSearches
 
 include("hebi.jl")
 
@@ -52,10 +53,13 @@ end
 ## TODO some kind of struct to map from vector to fields and structs?
 
 function randset!(h2, h1)
-    nv = 7
-    h2.sim.m.dof_damping[1:7]      .= h1.sim.m.dof_damping[1:7] .+ rand(Uniform(-0.05, 4.5), nv)
-    h2.sim.m.dof_armature[1:7]     .= h1.sim.m.dof_armature[1:7] .+ rand(Uniform(0, 10.2), nv)
-    h2.sim.m.dof_frictionloss[1:7] .= h1.sim.m.dof_frictionloss[1:7] .+ rand(Uniform(-0.05, 3.5), nv)
+    h2.sim.m.dof_damping[1:3]      .= h1.sim.m.dof_damping[1] .+ rand(Uniform(-0.05, 4.5), 3)
+    h2.sim.m.dof_damping[4:7]      .= h1.sim.m.dof_damping[4] .+ rand(Uniform(-0.05, 4.5), 4)
+    h2.sim.m.dof_armature[1:3]     .= h1.sim.m.dof_armature[1] .+ rand(Uniform(0, 10.2), 3)
+    h2.sim.m.dof_armature[4:7]     .= h1.sim.m.dof_armature[4] .+ rand(Uniform(0, 10.2), 4)
+    h2.sim.m.dof_frictionloss[1:3] .= h1.sim.m.dof_frictionloss[1] .+ rand(Uniform(-0.05, 3.5), 3)
+    h2.sim.m.dof_frictionloss[4:7] .= h1.sim.m.dof_frictionloss[4] .+ rand(Uniform(-0.05, 3.5), 4)
+    h2
 end
 function resetset!(h2, h1)
     h2.sim.m.dof_damping      .= h1.sim.m.dof_damping
@@ -145,74 +149,116 @@ function gradsysid(ref::HebiPickup, test::HebiPickup, ctrls)
     return result
 end
 
-function testsysid(ref::HebiPickup, test::HebiPickup, ctrls)
+function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     reset!(ref);  traj = _rollout(ref, ctrls)
     #reset!(test); data = _rollout(test, ctrls)
 
-    #randset!(test, ref)
-    #println(h2.sim.m.dof_damping[1:7])
-    #println(h2.sim.m.dof_armature[1:7])
-    #println(h2.sim.m.dof_frictionloss[1:7])
-    #modelvars = MultiShape(damping = VectorShape(Float64, 7), # only for joints
-    #                       armature = VectorShape(Float64, 7),
-    #                       frictionloss = VectorShape(Float64, 7))
-    #function setparams!(env, p::AbstractVector)
-    #    mp = modelvars(p)
-    #    env.sim.m.dof_damping[1:7]  .= mp.damping
-    #    env.sim.m.dof_armature[1:7] .= mp.armature
-    #    env.sim.m.dof_frictionloss[1:7] .= mp.frictionloss
-    #    env
-    #end
-    #function getparams!(p::AbstractVector, env)
-    #    mp = modelvars(p)
-    #    mp.damping      .= env.sim.m.dof_damping[1:7]
-    #    mp.armature     .= env.sim.m.dof_armature[1:7]
-    #    mp.frictionloss .= env.sim.m.dof_frictionloss[1:7]
-    #    env
-    #end
-
-    # One var testing
-    resetset!(test, ref)
-    test.sim.m.dof_damping[2] = 20.0
-    test.sim.m.dof_damping[3] = 20.0
-    modelvars = MultiShape(damping = VectorShape(Float64, 2))
+    randset!(test, ref)
+    println(test.sim.m.dof_damping[1:7])
+    println(test.sim.m.dof_armature[1:7])
+    println(test.sim.m.dof_frictionloss[1:7])
+    modelvars = MultiShape(x8_damping      = ScalarShape(Float64),
+                           x5_damping      = ScalarShape(Float64),
+                           x8_armature     = ScalarShape(Float64),
+                           x5_armature     = ScalarShape(Float64),
+                           x8_frictionloss = ScalarShape(Float64),
+                           x5_frictionloss = ScalarShape(Float64))
     function setparams!(env, p::AbstractVector)
         mp = modelvars(p)
-        env.sim.m.dof_damping[2]  = mp.damping[1]
-        env.sim.m.dof_damping[3]  = mp.damping[2]
+        env.sim.m.dof_damping[1:3]      .= mp.x8_damping
+        env.sim.m.dof_damping[4:7]      .= mp.x5_damping
+        env.sim.m.dof_armature[1:3]     .= mp.x8_armature
+        env.sim.m.dof_armature[4:7]     .= mp.x5_armature
+        env.sim.m.dof_frictionloss[1:3] .= mp.x8_frictionloss
+        env.sim.m.dof_frictionloss[4:7] .= mp.x5_frictionloss
         env
     end
     function getparams!(p::AbstractVector, env)
         mp = modelvars(p)
-        mp.damping[1] = env.sim.m.dof_damping[2]
-        mp.damping[2] = env.sim.m.dof_damping[3]
+        mp.x8_damping      = env.sim.m.dof_damping[1]
+        mp.x5_damping      = env.sim.m.dof_damping[4]
+        mp.x8_armature     = env.sim.m.dof_armature[1]
+        mp.x5_armature     = env.sim.m.dof_armature[4]
+        mp.x8_frictionloss = env.sim.m.dof_frictionloss[1]
+        mp.x5_frictionloss = env.sim.m.dof_frictionloss[4]
         env
     end
 
+    # One var testing
+    # resetset!(test, ref)
+    # test.sim.m.dof_damping[2] = 20.0
+    # test.sim.m.dof_damping[3] = 20.0
+    # modelvars = MultiShape(damping = VectorShape(Float64, 2))
+    # function setparams!(env, p::AbstractVector)
+    #     mp = modelvars(p)
+    #     env.sim.m.dof_damping[2]  = mp.damping[1]
+    #     env.sim.m.dof_damping[3]  = mp.damping[2]
+    #     env
+    # end
+    # function getparams!(p::AbstractVector, env)
+    #     mp = modelvars(p)
+    #     mp.damping[1] = env.sim.m.dof_damping[2]
+    #     mp.damping[2] = env.sim.m.dof_damping[3]
+    #     env
+    # end
+
     osp = obsspace(ref)
-    s = length(o.qpos) + length(o.qvel)
+    s = length(osp.qpos) + length(osp.qvel)
 
-    function opt(P)
-        if any(x->x < 0.0, P) # no negative params
-            return 1e6
+    tests = [ HebiPickup() for _=1:Threads.nthreads() ]
+    N = length(modelvars)
+    space = [ zeros(N) for i=1:N ]
+    function rolldiff(P, env)
+        setparams!(env, P)
+        reset!(env)
+        roll = _rollout(env, ctrls)
+        mse(roll.obses[1:s,:], traj.obses[1:s,:]) # from LyceumAI
+    end
+    function opt!(F, G, P)
+        #if any(x->x < 0.0, P) # no negative params
+        #    return 1e6
+        #end
+
+        z = rolldiff(P, test)
+        if G != nothing
+            for i=1:N
+                space[i] .= P
+                space[i][i] += 1e-4
+            end
+
+            Threads.@threads for i=1:N
+                tid = Threads.threadid() 
+                G[i] = (rolldiff(space[i], tests[tid]) - z) / 1e-4
+            end
         end
-        setparams!(test, P)
-
-        reset!(test)
-        roll = _rollout(test, ctrls)
-
-        return mse(roll.obses[1:s,:], traj.obses[1:s,:]) # from LyceumAI
+        if F != nothing
+            return z
+        end
     end
 
     initP = allocate(modelvars)
     getparams!(initP, test)
     println(initP)
+    clamp!(initP, 0.001, 4.9)
+    lower = fill(0.0001, N) # approx upper and lower bounds? can specialize more...
+    upper = fill(5.0, N)
 
     options = Optim.Options(allow_f_increases=false,
                             show_trace=true, show_every=10,
-                            iterations=40000, time_limit=60*10)
+                            iterations=40000, time_limit=60*5)
     #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
-    result = optimize(opt, initP, NelderMead(), options)
+    if optm == :NM
+        #result = optimize(opt, initP, NelderMead(), options)
+        result = optimize(Optim.only_fg!(opt!), lower, upper, initP, Fminbox(NelderMead()), options)
+    elseif optm == :LBFGS
+        #result = optimize(p->opt(p, test), optgrad!, initP, LBFGS(linesearch = LineSearches.BackTracking()), options)
+        #result = optimize(p->opt(p, test), initP, LBFGS(), options)
+        #result = optimize(opt, lower, upper, initP, Fminbox(LBFGS()), options)
+        result = optimize(Optim.only_fg!(opt!), lower, upper, initP,
+                          Fminbox(LBFGS(linesearch = LineSearches.BackTracking())), options)
+    else
+        @warn "optimizer $optm not configured yet."
+    end
     setparams!(test, result.minimizer)
 
     return result
