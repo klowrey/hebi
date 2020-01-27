@@ -205,34 +205,31 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     osp = obsspace(ref)
     s = length(osp.qpos) + length(osp.qvel)
 
+    function opt(P, env=test)
+        #if any(x->x < 0.0, P) # no negative params
+        #    return sum(traj.obses .^ 2) * 1 // length(traj.obses)
+        #end
+        setparams!(env, P)
+
+        reset!(env)
+        roll = _rollout(env, ctrls)
+
+        return mse(roll.obses[1:s,:], traj.obses[1:s,:]) # from LyceumAI
+    end
+
     tests = [ HebiPickup() for _=1:Threads.nthreads() ]
     N = length(modelvars)
     space = [ zeros(N) for i=1:N ]
-    function rolldiff(P, env)
-        setparams!(env, P)
-        reset!(env)
-        roll = _rollout(env, ctrls)
-        mse(roll.obses[1:s,:], traj.obses[1:s,:]) # from LyceumAI
-    end
-    function opt!(F, G, P)
-        #if any(x->x < 0.0, P) # no negative params
-        #    return 1e6
-        #end
-
-        z = rolldiff(P, test)
-        if G != nothing
-            for i=1:N
-                space[i] .= P
-                space[i][i] += 1e-4
-            end
-
-            Threads.@threads for i=1:N
-                tid = Threads.threadid() 
-                G[i] = (rolldiff(space[i], tests[tid]) - z) / 1e-4
-            end
+    function optgrad!(storage, P)
+        for i=1:N
+            space[i] .= P
+            space[i][i] += 1e-4
         end
-        if F != nothing
-            return z
+        z = opt(P, test)
+        
+        Threads.@threads for i=1:N
+            tid = Threads.threadid() 
+            storage[i] = (opt(space[i], tests[tid]) - z) / 1e-4
         end
     end
 
@@ -245,17 +242,30 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
 
     options = Optim.Options(allow_f_increases=false,
                             show_trace=true, show_every=10,
-                            iterations=40000, time_limit=60*5)
+                            iterations=40000, time_limit=60*10)
     #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(), options)
-        result = optimize(Optim.only_fg!(opt!), lower, upper, initP, Fminbox(NelderMead()), options)
+        result = optimize(opt, lower, upper, initP, Fminbox(NelderMead()), options)
     elseif optm == :LBFGS
         #result = optimize(p->opt(p, test), optgrad!, initP, LBFGS(linesearch = LineSearches.BackTracking()), options)
         #result = optimize(p->opt(p, test), initP, LBFGS(), options)
         #result = optimize(opt, lower, upper, initP, Fminbox(LBFGS()), options)
-        result = optimize(Optim.only_fg!(opt!), lower, upper, initP,
+        result = optimize(p->opt(p, test), optgrad!, lower, upper, initP,
                           Fminbox(LBFGS(linesearch = LineSearches.BackTracking())), options)
+    elseif optm == :PS
+        #all_minx = [Float64[] for i in Threads.nthreads()]
+        #all_minf = [Float64[] for i in Threads.nthreads()]
+        #Threads.@threads for i in 1:N 
+        #    (minf,minx,ret) = optimize(opt, rand(2))
+        #    push!(all_minx[Threads.threadid()],minx)
+        #    push!(all_minf[Threads.threadid()],minf)
+        #end
+
+        #minxs = vcat(all_minx...)
+        #minfs = vcat(all_minf...)
+        result = optimize(opt, initP,
+                          ParticleSwarm(lower=lower, upper=upper, n_particles=60), options)
     else
         @warn "optimizer $optm not configured yet."
     end

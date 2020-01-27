@@ -18,18 +18,23 @@ julia> ]
 `testsysid` function currently compares two models after setting one to have
  the wrong damping values for two joints.
 
- It correctly recovers the correct values.
+It correctly recovers the correct values, assuming the same parameters for the
+two different motors.
 
 ```julia
 julia> include("src/runhebi.jl")
 julia> h = HebiPickup()
 julia> h2 = HebiPickup()
 julia> a = getsincontrols(h, 2000)
-julia> result = testsysid(h, h2, a)
+julia> result = testsysid(h, h2, a; optm=:LBFGS)
 julia> result.minimizer
-i2-element Array{Float64,1}:
- 0.5001817850595129
- 0.49973369119618827
+6-element Array{Float64,1}:
+ 0.4989704738104854
+ 0.09929717145680375
+ 0.010059651430875389
+ 0.009927101543924597
+ 0.5005574377220603
+ 0.1057254675069472
 ```
 
 
