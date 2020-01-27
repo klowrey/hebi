@@ -7,6 +7,8 @@ ROS is bad.
 Background: https://docs.lyceum.ml/dev/
 
 ```julia
+bash> cd hebi
+bash> julia --project
 julia> ]
 (hebi) pkg> registry add https://github.com/Lyceum/LyceumRegistry
 (hebi) pkg> instantiate
