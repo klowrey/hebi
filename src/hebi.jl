@@ -8,7 +8,8 @@ struct HebiPickup{S<:MJSim, O} <: AbstractMuJoCoEnvironment
     function HebiPickup(sim::MJSim)
         goal = SA_F64[0.5, 0.0, 0.2]
         m = sim.m
-        osp = MultiShape(qpos = VectorShape(Float64, m.nq-7), # no object
+        #Josp = MultiShape(qpos = VectorShape(Float64, m.nq-7),  ## TODO OBJECT# no object
+        osp = MultiShape(qpos = VectorShape(Float64, m.nq), # no object
                          qvel = VectorShape(Float64, m.nv),
                          obj  = VectorShape(Float64, 3),
                          cpsk  = VectorShape(Float64, 3), # chopstick site
@@ -32,7 +33,7 @@ HebiPickup() = first(tconstruct(HebiPickup, 1))
 
 # This function sets to the key_qpos but also sets the controls assuming it's position controllers
 function keypos_position(sim)
-    key_qpos = sim.m.key_qpos
+    key_qpos = sim.m.key_qpos ## TODO OBJECT ## TODO OBJECT
     @uviews key_qpos @inbounds sim.d.qpos .= view(key_qpos,:,1) # noalloc
     sim.d.ctrl[2] = 1.0   # when using position control
     sim.d.ctrl[3] = 1.0
@@ -41,14 +42,14 @@ end
 
 @propagate_inbounds function LyceumMuJoCo.reset!(env::HebiPickup)
     fastreset_nofwd!(env.sim)
-    keypos_position(env.sim)
+    #keypos_position(env.sim)
     forward!(env.sim)
     env
 end
 
 @propagate_inbounds function LyceumMuJoCo.randreset!(rng::Random.AbstractRNG, env::HebiPickup)
     fastreset_nofwd!(env.sim)
-    keypos_position(env.sim)
+    #keypos_position(env.sim)
     d = env.sim.d
     d.qpos[end-2] = rand(rng, Uniform(0.4, 0.7))
     d.qpos[end-1] = rand(rng, Uniform(-0.3, 0.3))
@@ -72,7 +73,8 @@ end
 
     @uviews obs @inbounds begin
         o = obsspace(env)(obs)
-        o.qpos .= view(qpos, 1:(m.nq-7))
+        #o.qpos .= view(qpos, 1:(m.nq-7)) ## TODO OBJECT
+        o.qpos .= view(qpos, 1:(m.nq))
         o.qvel .= view(qvel, 1:m.nv)
         o.obj  .= _obj
         o.cpsk .= _cpsk
@@ -84,9 +86,21 @@ end
     obs
 end
 
+@propagate_inbounds function LyceumMuJoCo.step!(env::HebiPickup)
+
+    vellimits = SVector{7, Float64}(3.434687, 3.434687, 3.434687, 9.617128, 9.617128, 9.617128, 9.617128)
+
+    d = env.sim.d
+    for i=1:(length(d.ctrl)) # num actuators
+        d.qvel[i] = clamp(d.qvel[i], -vellimits[i], vellimits[i])
+    end
+
+    step!(env.sim)
+end
+
 @propagate_inbounds function LyceumMuJoCo.getreward(state, action, obs, env::HebiPickup)
     o = obsspace(env)(obs)
-
+    
     _cs2obj = o.d_obj / 0.5
     _obj2goal = o.d_goal / 0.5
 

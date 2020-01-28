@@ -22,16 +22,16 @@
         <material name="contact"   specular="0"   shininess="0.5" reflectance="0"   rgba="0.06 0.06 0.82 0.5" />
     </asset>
     <default>
-        <joint armature="0.01"/>
+        <!-- <joint armature="0.01"/> -->
         <geom contype="0" conaffinity="0" />
         <default class="X8">
-          <joint damping="0.5" frictionloss="0.5" limited="true" />
+          <joint damping="5" armature="9" frictionloss="0.5" limited="false" />
           <position forcelimited="true" forcerange="-20 20" />
           <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
-          <motor    forcelimited="true" forcerange="-20 20" ctrllimited="true" ctrlrange="-1 1" />
+          <motor    forcelimited="true" forcerange="-10 10" ctrllimited="true" ctrlrange="-1 1" />
         </default>
         <default class="X5">
-          <joint damping="0.1" frictionloss="0.1" limited="false" />
+          <joint damping="1" armature="43" frictionloss="0.1" limited="false" />
           <position forcelimited="true" forcerange="-2.5 2.5" />
           <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
           <motor    forcelimited="true" forcerange="-2.5 2.5" ctrllimited="true" ctrlrange="-1 1" />
@@ -76,12 +76,12 @@
                     <geom pos="0.325 0 0" quat="0 1 0 0" type="mesh" material="motor" mesh="X5" />
                     <body name="wrist1_wrist2" pos="0.325 0 -0.031" quat="0 1 0 0">
                         <inertial pos="-0.0107783 -0.0503434 0.0328277" quat="0.085146 0.689429 0.478781 0.536849" mass="0.415" diaginertia="0.000574146 0.000532257 0.000373775" />
-                        <joint class="X5" name="HEBI/wrist1/X5_1" pos="0 0 0" axis="0 0 1" limited="true" range="-6.28319 6.28319" />
+                        <joint class="X5" name="HEBI/wrist1/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-6.28319 6.28319" />
                         <geom quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01R" />
                         <geom pos="0 -0.043 0.04" quat="0.707107 0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                         <body name="wrist2_wrist3" pos="0 -0.074 0.04" quat="0.707107 0.707107 0 0">
                             <inertial pos="-0.0107783 -0.0503434 0.0328277" quat="0.085146 0.689429 0.478781 0.536849" mass="0.415" diaginertia="0.000574146 0.000532257 0.000373775" />
-                            <joint class="X5" name="HEBI/wrist2/X5_1" pos="0 0 0" axis="0 0 1" limited="true" range="-4.71239 4.71239" />
+                            <joint class="X5" name="HEBI/wrist2/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-4.71239 4.71239" />
                             <geom quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01R" />
                             <geom pos="0 -0.043 0.04" quat="0.707107 0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                             <body name="wrist3_chopstick" pos="0 -0.074 0.04" quat="0.707107 0.707107 0 0">
@@ -116,11 +116,14 @@
             <geom rgba="0.9 0.2 0.2 1" type="sphere" size="0.008 0.008 0.008" density="300" contype="1" conaffinity="0"/>
         </body> -->
 
+        <!--
         <body name="mybox_body" pos="0.6 0.1 0.03">
           <joint name="mybox_joint" type="free" damping="0.0" />
           <geom size="0.01 0.01 0.01" type="box" name="mybox" material="block_mat" mass="0.01" contype="1" conaffinity="1" />
-            <!--<site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>-->
+                 <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>
         </body>
+        -->
+
         <!-- foam
         <body name="myfoam" pos="0.45 -0.02 0.5">
             <freejoint name="myfoam_joint"/>
@@ -137,24 +140,28 @@
         <pair geom1="chop" geom2="stick" solref="0.001" /> <!-- solref to low to prevent chopstick crushing into each other in sim -->
         <!--<pair geom1="ground" geom2="mybox" friction="1 1 0.005 0.001 0.001" solimp="" />-->
 
+        <!--
         <pair geom1="mybox" geom2="chop"   condim="6" friction="1 1 0.05 0.001 0.001" solref="0.02 1" />
         <pair geom1="mybox" geom2="stick"  condim="6" friction="1 1 0.05 0.001 0.001" solref="0.02 1" />
         <pair geom1="mybox" geom2="ground" condim="6" friction="1 1 0.05 0.001 0.001" solref="0.02 1" />
+        -->
 
         <pair geom1="ground" geom2="chop"  friction="1 1 0.005 0.001 0.001" />
         <pair geom1="ground" geom2="stick" friction="1 1 0.005 0.001 0.001" />
     </contact>
     <actuator>
         <!-- 
-        <motor gear="100" joint="HEBI/base/X8_9"      name="base"/> 
-        <motor gear="100" joint="HEBI/shoulder/X8_16" name="shoulder"/>
-        <motor gear="100" joint="HEBI/elbow/X8_9"     name="elbow"/>
-        <motor gear="100" joint="HEBI/wrist1/X5_1"    name="wrist1"/>
-        <motor gear="100" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
-        <motor gear="100" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
-        <motor gear="100" joint="HEBI/chopstick/X5_1" name="chop"/>
 -->
+        <motor gear="762.222"  joint="HEBI/base/X8_9"      name="base"/> 
+        <motor gear="1462.222" joint="HEBI/shoulder/X8_16" name="shoulder"/>
+        <motor gear="762.222"  joint="HEBI/elbow/X8_9"     name="elbow"/>
 
+        <motor gear="272.222" joint="HEBI/wrist1/X5_1"    name="wrist1"/>
+        <motor gear="272.222" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
+        <motor gear="272.222" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
+        <motor gear="272.222" joint="HEBI/chopstick/X5_1" name="chop"/>
+
+        <!--
         <position kp="100" joint="HEBI/base/X8_9"      name="pbase"/>
         <position kp="100" joint="HEBI/shoulder/X8_16" name="pshoulder"/>
         <position kp="100" joint="HEBI/elbow/X8_9"     name="pelbow"/>
@@ -162,7 +169,6 @@
         <position kp="100" joint="HEBI/wrist2/X5_1"    name="pwrist2"/>
         <position kp="100" joint="HEBI/wrist3/X5_1"    name="pwrist3"/>
         <position kp="100" joint="HEBI/chopstick/X5_1" name="pchop"/>
-        <!--
 
         <velocity kv="10" joint="HEBI/base/X8_9"       name="vbase"/>
         <velocity kv="10" joint="HEBI/shoulder/X8_16"  name="vshoulder"/>
@@ -175,7 +181,9 @@
 
     </actuator>
 
+    <!--
     <keyframe>
-      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/> <!-- needs position controllers to match 1:7 -->
+      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/> 
     </keyframe>
+-->
 </mujoco>
