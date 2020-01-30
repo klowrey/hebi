@@ -18,9 +18,18 @@ struct HebiPickup{S<:MJSim, O} <: AbstractMuJoCoEnvironment
                          cs2obj  = VectorShape(Float64, 3), # chopsticks to object
                          obj2goal = VectorShape(Float64, 3), # object to goal
                         )
+
+        #my_warning_cb(msg::Cstring) = (@warn unsafe_string(msg); nothing)
+        #warncb = @cfunction(hebicontroller, mjModel, mjData, (model, data))
+        #MJCore.CGlobals.mjcb_control = warncb
+
         new{typeof(sim), typeof(osp)}(sim, osp, goal)
     end
 end
+
+#function hebicontroller(m, d)
+#
+#end
 
 function tconstruct(::Type{HebiPickup}, n::Integer)
     modelpath = joinpath(@__DIR__, "hebi.xml")
@@ -58,6 +67,21 @@ end
     env
 end
 
+@propagate_inbounds function LyceumMuJoCo.setaction!(env::HebiPickup, a)
+
+    maxtorque = SVector{7, Float64}(20.0, 38.0, 20.0, 2.5, 2.5, 2.5, 2.5)
+    #vellimits = SVector{7, Float64}(3.14, 1.57, 3.14, 9.42, 9.42, 9.42, 9.42)
+    speed_24v = SVector{7, Float64}(3.267, 1.759, 3.267, 14.074, 14.074, 14.074, 14.074) # rad/sec / volt * 24v
+
+    qvel = SVector{7, Float64}(d.qvel)
+
+    s = maxtorque ./ speed_24v
+    maxT = -s .* abs(qvel) .+ maxtorque # where we are on the speed-torque curve
+    d.ctrl .= a .* maxT 
+    d.ctrl .= a .* maxT 
+   t = @. act[i,:] * maxT - (s * abs(vel[i,:]))
+end
+
 @inline _sitedist(s1, s2, dmin) = min(euclidean(s1, s2), dmin)
 @propagate_inbounds function LyceumMuJoCo.getobs!(obs, env::HebiPickup)
     m, d = env.sim.m, env.sim.d
@@ -88,7 +112,8 @@ end
 
 @propagate_inbounds function LyceumMuJoCo.step!(env::HebiPickup)
 
-    vellimits = SVector{7, Float64}(3.434687, 3.434687, 3.434687, 9.617128, 9.617128, 9.617128, 9.617128)
+    #vellimits = SVector{7, Float64}(3.434687, 3.434687, 3.434687, 9.617128, 9.617128, 9.617128, 9.617128)
+    vellimits = SVector{7, Float64}(3.14, 1.57, 3.14, 9.42, 9.42, 9.42, 9.42)
 
     d = env.sim.d
     for i=1:(length(d.ctrl)) # num actuators

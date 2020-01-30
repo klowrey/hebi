@@ -71,57 +71,121 @@ function resetset!(h2, h1)
     h2.sim.m.dof_frictionloss .= h1.sim.m.dof_frictionloss
 end
 
+function sysidfromfile(s, test::HebiPickup; optm=:NM, batch=nothing)
+    dt, pos, vel, act = datafile(s)
 
-function datafile(s="example.csv")
+    if batch == nothing
+        batch = 1:size(pos,2)
+    end
+    return filesysid(vcat(pos, vel), test, act; optm = optm, batch=batch)
+end
+
+function datafile(s="example.csv", nv=7)
     d = CSV.read(s)
     println(names(d))
     r, c = size(d)
 
-    nv = 7 # for Hebi
-
     pos = zeros(nv, r)
     vel = zeros(nv, r)
     act = zeros(nv, r)
+    eff = zeros(nv, r)
 
     @time Threads.@threads for i=1:r
         pos[:, i] .= tryparse.(Float64, split(d.positions[i]))
         vel[:, i] .= tryparse.(Float64, split(d.velocities[i]))
         act[:, i] .= tryparse.(Float64, split(d.pwmCommands[i]))
+        eff[:, i] .= tryparse.(Float64, split(d.efforts[i]))
     end
     
+    println(r)
     dt = (d.timestamp_us .- d.timestamp_us[1]) * 1e-6
 
     # to currently match the 0.004 DT model (dt = 0.002 with skip = 2)
-    return dt[2:4:end], pos[:,2:4:end], vel[:,2:4:end], act[:,2:4:end]
-    #return dt, pos, vel, act
+    #return dt[2:4:end], pos[:,2:4:end], vel[:,2:4:end], act[:,2:4:end]
+    return dt, pos, vel, act, eff 
 end
 
-function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, ndata = size(refstate, 2))
+function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(refstate, 2))
+    #modelvars = MultiShape(x8_damping      = ScalarShape(Float64),
+    #                       x5_damping      = ScalarShape(Float64),
+    #                       x8_armature     = ScalarShape(Float64),
+    #                       x5_armature     = ScalarShape(Float64),
+    #                       x8_frictionloss = ScalarShape(Float64),
+    #                       x5_frictionloss = ScalarShape(Float64),
+    #                       x8_gear         = ScalarShape(Float64),
+    #                       x8_16_gear      = ScalarShape(Float64),
+    #                       x5_gear         = ScalarShape(Float64),
+    #                      )
     modelvars = MultiShape(x8_damping      = ScalarShape(Float64),
-                           x5_damping      = ScalarShape(Float64),
                            x8_armature     = ScalarShape(Float64),
-                           x5_armature     = ScalarShape(Float64),
                            x8_frictionloss = ScalarShape(Float64),
-                           x5_frictionloss = ScalarShape(Float64))
+                           x8_gear         = ScalarShape(Float64),
+                           x8_16_damping      = ScalarShape(Float64),
+                           x8_16_armature     = ScalarShape(Float64),
+                           x8_16_frictionloss = ScalarShape(Float64),
+                           x8_16_gear      = ScalarShape(Float64),
+                          )
+    #modelvars = MultiShape(x5_damping      = ScalarShape(Float64),
+    #                       x5_armature     = ScalarShape(Float64),
+    #                       x5_frictionloss = ScalarShape(Float64),
+    #                       x5_gear         = ScalarShape(Float64),
+    #                      )
+    scalingfactor = ones(6) #[ 100.0, 10.0,
+                    #    1.0, 1.0,
+                    #   10.0, 10.0
+                    #]
     N = length(modelvars)
     function setparams!(env, p::AbstractVector, varspace)
         mp = varspace(p)
-        env.sim.m.dof_damping[1:3]      .= mp.x8_damping
-        env.sim.m.dof_damping[4:7]      .= mp.x5_damping
-        env.sim.m.dof_armature[1:3]     .= mp.x8_armature
-        env.sim.m.dof_armature[4:7]     .= mp.x5_armature
-        env.sim.m.dof_frictionloss[1:3] .= mp.x8_frictionloss
-        env.sim.m.dof_frictionloss[4:7] .= mp.x5_frictionloss
+        m = env.sim.m
+        ##env.sim.m.dof_damping[1:3]      .= scalingfactor[1] * mp.x8_damping
+        #m.dof_damping[1]      = scalingfactor[1] * mp.x8_damping
+        #m.dof_damping[2]      = 2 * scalingfactor[1] * mp.x8_damping
+        #m.dof_damping[3]      = scalingfactor[1] * mp.x8_damping
+        ##m.dof_damping[4:7]      .= scalingfactor[2] * mp.x5_damping
+        #m.dof_armature[1:3]     .= scalingfactor[3] * mp.x8_armature
+        ##m.dof_armature[4:7]     .= scalingfactor[4] * mp.x5_armature
+        #m.dof_frictionloss[1:3] .= scalingfactor[5] * mp.x8_frictionloss
+        ##m.dof_frictionloss[4:7] .= scalingfactor[6] * mp.x5_frictionloss
+
+        m.dof_damping[1]      = mp.x8_damping
+        m.dof_damping[2]      = mp.x8_16_damping
+        m.dof_damping[3]      = mp.x8_damping
+        m.dof_armature[1]     = mp.x8_armature
+        m.dof_armature[2]     = mp.x8_16_armature
+        m.dof_armature[3]     = mp.x8_armature
+        m.dof_frictionloss[1] = mp.x8_frictionloss
+        m.dof_frictionloss[2] = mp.x8_16_frictionloss
+        m.dof_frictionloss[3] = mp.x8_frictionloss
+
+        m.actuator_gear[1,1]    = mp.x8_gear
+        m.actuator_gear[1,2]    = mp.x8_16_gear
+        m.actuator_gear[1,3]    = mp.x8_gear
+        #m.actuator_gear[1,4:7] .= mp.x5_gear
+
         env
     end
     function getparams!(p::AbstractVector, env, varspace)
         mp = varspace(p)
-        mp.x8_damping      = env.sim.m.dof_damping[1]
-        mp.x5_damping      = env.sim.m.dof_damping[4]
-        mp.x8_armature     = env.sim.m.dof_armature[1]
-        mp.x5_armature     = env.sim.m.dof_armature[4]
-        mp.x8_frictionloss = env.sim.m.dof_frictionloss[1]
-        mp.x5_frictionloss = env.sim.m.dof_frictionloss[4]
+        m = env.sim.m
+        #mp.x8_damping      = m.dof_damping[1]      / scalingfactor[1] 
+        ##mp.x5_damping      = m.dof_damping[4]      / scalingfactor[2]
+        #mp.x8_armature     = m.dof_armature[1]     / scalingfactor[3]
+        ##mp.x5_armature     = m.dof_armature[4]     / scalingfactor[4]
+        #mp.x8_frictionloss = m.dof_frictionloss[1] / scalingfactor[5]
+        ##mp.x5_frictionloss = m.dof_frictionloss[4] / scalingfactor[6]
+
+        mp.x8_gear    = m.actuator_gear[1,1]
+        mp.x8_16_gear = m.actuator_gear[1,2]
+        #mp.x5_gear    = m.actuator_gear[1,4]
+
+        mp.x8_damping         = m.dof_damping[1]      
+        mp.x8_16_damping      = m.dof_damping[2]      
+        mp.x8_armature        = m.dof_armature[1]     
+        mp.x8_16_armature     = m.dof_armature[2]     
+        mp.x8_frictionloss    = m.dof_frictionloss[1] 
+        mp.x8_16_frictionloss = m.dof_frictionloss[2] 
+
         env
     end
 
@@ -129,18 +193,25 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, ndata = size(ref
     s = length(osp.qpos) + length(osp.qvel) #- 6 # ignore the object's data for now
     println(s)
 
-    qpos0 = refstate[1:7,1]
-    qvel0 = refstate[8:14,1]
+    #batch = 1500:8000 #1000:6000
+    nq = test.sim.m.nq
+    nv = test.sim.m.nv
 
-    function opt(P, env=test, Y=refstate)
+    function opt(P, env=test, Y=refstate, batch=batch)
         setparams!(env, P, modelvars)
 
         reset!(env)
-        env.sim.d.qpos .= qpos0
-        env.sim.d.qvel .= qvel0
-        roll = _rollout(env, ctrls[:,1:ndata])
+        env.sim.d.qpos .= Y[1:7,  batch.start]
+        env.sim.d.qvel .= Y[8:14, batch.start]
+        env.sim.d.ctrl .= ctrls[:,batch.start]
+        forward!(env.sim)
+        roll = _rollout(env, ctrls[:,batch])
 
-        return mse(Y[:,1:ndata], roll.obses[1:s,1:ndata]) # from LyceumAI
+        #return mse(Y[:,batch], roll.obses[1:s,:]) # from LyceumAI
+        idx = 1:3 #4:6
+        vid = nq .+ idx
+        return mse(Y[idx,batch], roll.obses[idx,:]) + mse(Y[vid,batch], roll.obses[vid,:])
+        #return mse(Y[1:7,batch], roll.obses[1:7,:]) + mse(10 .* Y[8:14,batch], 10 .* roll.obses[8:14,:])
     end
 
     tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
@@ -152,8 +223,6 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, ndata = size(ref
         end
         Peps[end] .= P
 
-        #z = opt(P, test)
-        
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
             tid = Threads.threadid() 
@@ -165,15 +234,17 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, ndata = size(ref
     initP = allocate(modelvars)
     getparams!(initP, test, modelvars)
     println(initP)
-    hi = 20.0
+    hi = 2.0
     lo = 0.001
     #Jj clamp!(initP, 2*lo, hi - 1e-4)
     lower = fill(lo, N) # approx upper and lower bounds? can specialize more...
-    upper = [20.0, 20.0, 100, 75, 5, 5] #fill(hi, N)
+    #upper = [50.0, 10.0, 5, 5, 5, 5, 100, 100] #fill(1.0, N)
+    #upper = [10.0, 5, 5, 100] # 4:6
+    upper = [100.0, 5, 5, 100, 100.0, 5, 5, 100] # 1:3
 
     options = Optim.Options(allow_f_increases=false,
                             show_trace=true, show_every=10,
-                            iterations=40000, time_limit=60*10)
+                            iterations=40000, time_limit=60*60)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
         result = optimize(opt, lower, upper, initP, Fminbox(NelderMead()), options) # probably need custom simplex initializer
@@ -206,10 +277,10 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, ndata = size(ref
     return result
 
 end
+
 function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     reset!(ref)
     traj = _rollout(ref, ctrls)
-    #reset!(test); data = _rollout(test, ctrls)
 
     randset!(test, ref)
     #println(test.sim.m.dof_damping[1:7])
@@ -221,25 +292,26 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
                            x5_armature     = ScalarShape(Float64),
                            x8_frictionloss = ScalarShape(Float64),
                            x5_frictionloss = ScalarShape(Float64))
+    scalingfactor = [ 1000.0, 100.0, 10.0, 10.0, 1000.0, 10.0 ]
     N = length(modelvars)
     function setparams!(env, p::AbstractVector)
         mp = modelvars(p)
-        env.sim.m.dof_damping[1:3]      .= mp.x8_damping
-        env.sim.m.dof_damping[4:7]      .= mp.x5_damping
-        env.sim.m.dof_armature[1:3]     .= mp.x8_armature
-        env.sim.m.dof_armature[4:7]     .= mp.x5_armature
-        env.sim.m.dof_frictionloss[1:3] .= mp.x8_frictionloss
-        env.sim.m.dof_frictionloss[4:7] .= mp.x5_frictionloss
+        env.sim.m.dof_damping[1:3]      .= scalingfactor[1] * mp.x8_damping
+        env.sim.m.dof_damping[4:7]      .= scalingfactor[2] * mp.x5_damping
+        env.sim.m.dof_armature[1:3]     .= scalingfactor[3] * mp.x8_armature
+        env.sim.m.dof_armature[4:7]     .= scalingfactor[4] * mp.x5_armature
+        env.sim.m.dof_frictionloss[1:3] .= scalingfactor[5] * mp.x8_frictionloss
+        env.sim.m.dof_frictionloss[4:7] .= scalingfactor[6] * mp.x5_frictionloss
         env
     end
     function getparams!(p::AbstractVector, env)
         mp = modelvars(p)
-        mp.x8_damping      = env.sim.m.dof_damping[1]
-        mp.x5_damping      = env.sim.m.dof_damping[4]
-        mp.x8_armature     = env.sim.m.dof_armature[1]
-        mp.x5_armature     = env.sim.m.dof_armature[4]
-        mp.x8_frictionloss = env.sim.m.dof_frictionloss[1]
-        mp.x5_frictionloss = env.sim.m.dof_frictionloss[4]
+        mp.x8_damping      = env.sim.m.dof_damping[1]      / scalingfactor[1] 
+        mp.x5_damping      = env.sim.m.dof_damping[4]      / scalingfactor[2]
+        mp.x8_armature     = env.sim.m.dof_armature[1]     / scalingfactor[3]
+        mp.x5_armature     = env.sim.m.dof_armature[4]     / scalingfactor[4]
+        mp.x8_frictionloss = env.sim.m.dof_frictionloss[1] / scalingfactor[5]
+        mp.x5_frictionloss = env.sim.m.dof_frictionloss[4] / scalingfactor[6]
         env
     end
 
@@ -269,7 +341,7 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
             tid = Threads.threadid() 
-            cache[i] = opt(Peps[i], tests[tid]) #- z) / ep
+            cache[i] = opt(Peps[i], tests[tid])
         end
         storage .= (cache[1:N] .- cache[end]) ./ ep
     end
@@ -370,7 +442,7 @@ function vizdif_ref(env::HebiPickup, pos, vel, ctrls::AbstractMatrix)
     ref[16:end, :] .= 0.0
 
     #reset!(env)
-    #visualize(env, trajectories=[ref, traj.states])
+    visualize(env, trajectories=[ref, traj.states])
     return traj.states[2:8,:], traj.states[9:15,:]
 end
 

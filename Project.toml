@@ -4,11 +4,13 @@ authors = ["klowrey <kendall.lowrey@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LineSearches = "d3d80556-e9d4-5f37-9878-2ab0fcc64255"
+LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 Lyceum = "f25b5985-59c0-418b-a573-42c079f3f644"
 LyceumAI = "6917c76a-ac01-4302-a33e-8c456ab70f71"
 LyceumBase = "db31fed1-ca1e-4084-8a49-12fae1996a55"
