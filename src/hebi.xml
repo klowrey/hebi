@@ -22,10 +22,9 @@
         <material name="contact"   specular="0"   shininess="0.5" reflectance="0"   rgba="0.06 0.06 0.82 0.5" />
     </asset>
     <default>
-        <!-- <joint armature="0.01"/> -->
         <geom contype="0" conaffinity="0" />
 
-        <default class="X8">
+        <default class="X8-9">
             <joint damping="15.6" armature="0.598" frictionloss="0.512" limited="false" /> -->
             <position forcelimited="true" forcerange="-20 20" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
@@ -33,11 +32,11 @@
         </default>
         <default class="X8_16">
             <joint damping="38.2" armature="3.269" frictionloss="1.416" limited="false" /> -->
-            <position forcelimited="true" forcerange="-20 20" />
+            <position forcelimited="true" forcerange="-38 38" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
             <motor    forcelimited="true" forcerange="-38 38" ctrllimited="true" ctrlrange="-1 1" />
         </default>
-        <default class="X5">
+        <default class="X5-1">
             <joint damping="3" armature="0.0503" frictionloss="0.026" limited="false" />
             <position forcelimited="true" forcerange="-2.5 2.5" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
@@ -57,13 +56,13 @@
         <!-- Arm -->
         <geom type="mesh" material="motor" mesh="X8" contype="0" conaffinity="0" />
         <!-- primitive contact geomotery
-        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" /> 
+        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" />
+        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" />
+        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" />
         -->
         <body name="shoulder_bracket" pos="0 0 0.045">
             <inertial pos="-0.0101399 -0.048785 0.0445629" quat="0.720398 0.150702 -0.477883 0.479525" mass="0.715" diaginertia="0.00110899 0.00102189 0.000683866" />
-            <joint class="X8" name="HEBI/base/X8_9" pos="0 0 0" axis="0 0 1" range="-6.28319 3.14159" />
+            <joint class="X8-9" name="HEBI/base/X8_9" pos="0 0 0" axis="0 0 1" range="-6.28319 3.14159" />
             <geom pos="0 0 0.005" quat="0.5 0.5 0.5 0.5" type="mesh" rgba="0.1 0.1 0.1 1" mesh="PM-2149-01" />
             <geom pos="0 -0.03 0.04" quat="0.707107 0.707107 0 0" type="mesh" rgba="0.1 0.1 0.1 1" mesh="PM-2150-01R" />
             <geom pos="0 -0.0375 0.055" quat="0.707107 0.707107 0 0" type="mesh" material="motor" mesh="X8" />
@@ -76,24 +75,24 @@
                 <geom pos="0.325 0 0" quat="0 1 0 0" type="mesh" material="motor" mesh="X8" />
                 <body name="elbow_wrist1" pos="0.325 0 -0.045" quat="0 1 0 0">
                     <inertial pos="0.227653 0.00136192 0.00396444" quat="0.38535 0.602736 0.44622 0.537683" mass="0.717" diaginertia="0.00791717 0.00789062 0.000266423" />
-                    <joint class="X8" name="HEBI/elbow/X8_9" pos="0 0 0" axis="0 0 1" range="-3 3" />
+                    <joint class="X8-9" name="HEBI/elbow/X8_9" pos="0 0 0" axis="0 0 1" range="-3 3" />
                     <geom type="mesh" rgba="0.1 0.1 0.1 1" mesh="A-2038-02" />
                     <geom size="0.016 0.1498" pos="0.1625 0 0.02" quat="0.707123 0 0.70709 0" type="cylinder" rgba="0.1 0.1 0.1 1" />
                     <geom pos="0.325 0 0" quat="0 -1 0 0" type="mesh" rgba="0.1 0.1 0.1 1" mesh="A-2039-02" />
                     <geom pos="0.325 0 0" quat="0 1 0 0" type="mesh" material="motor" mesh="X5" />
                     <body name="wrist1_wrist2" pos="0.325 0 -0.031" quat="0 1 0 0">
                         <inertial pos="-0.0107783 -0.0503434 0.0328277" quat="0.085146 0.689429 0.478781 0.536849" mass="0.415" diaginertia="0.000574146 0.000532257 0.000373775" />
-                        <joint class="X5" name="HEBI/wrist1/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-6.28319 6.28319" />
+                        <joint class="X5-1" name="HEBI/wrist1/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-6.28319 6.28319" />
                         <geom quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01R" />
                         <geom pos="0 -0.043 0.04" quat="0.707107 0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                         <body name="wrist2_wrist3" pos="0 -0.074 0.04" quat="0.707107 0.707107 0 0">
                             <inertial pos="-0.0107783 -0.0503434 0.0328277" quat="0.085146 0.689429 0.478781 0.536849" mass="0.415" diaginertia="0.000574146 0.000532257 0.000373775" />
-                            <joint class="X5" name="HEBI/wrist2/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-4.71239 4.71239" />
+                            <joint class="X5-1" name="HEBI/wrist2/X5_1" pos="0 0 0" axis="0 0 1" limited="false" range="-4.71239 4.71239" />
                             <geom quat="0.5 0.5 -0.5 -0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01R" />
                             <geom pos="0 -0.043 0.04" quat="0.707107 0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                             <body name="wrist3_chopstick" pos="0 -0.074 0.04" quat="0.707107 0.707107 0 0">
                                 <inertial pos="0.0185792 0.0763281 0.0628712" quat="0.647288 0.272348 0.652432 0.284916" mass="0.415" diaginertia="0.000574146 0.000532257 0.000173775" />
-                                <joint class="X5" name="HEBI/wrist3/X5_1" pos="0 0 0" axis="0 0 1" />
+                                <joint class="X5-1" name="HEBI/wrist3/X5_1" pos="0 0 0" axis="0 0 1" />
                                 <geom quat="0.5 0.5 0.5 0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01L" />
                                 <geom pos="0 0.043 0.04" quat="0.707107 -0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                                 <geom name="stick" pos="0.0015 0.079024 0.06325" quat="0.707107 -0.707107 0 0" type="mesh" rgba="0.96 0.945 0.871 1" mesh="chopstick" />
@@ -103,7 +102,7 @@
                                 <site name="chopstick" pos="0.11 0.078 0.055" type="sphere" size="0.005" rgba="0.1 0.1 0.1 0.5" />
                                 <body name="end_effector" pos="0 0.074 0.04" quat="0.707107 -0.707107 0 0">
                                     <inertial pos="0.0280385 0.0131706 0.005274" quat="-0.141906 0.692721 0.141906 0.692721" mass="0.010" diaginertia="0.0000401152 0.0000401151 0.0000300001" />
-                                    <joint class="X5" name="HEBI/chopstick/X5_1" pos="0 0 0" axis="0 0 1" />
+                                    <joint class="X5-1" name="HEBI/chopstick/X5_1" pos="0 0 0" axis="0 0 1" />
                                     <geom name="chop" pos="0.001 0.0048 0.005274" quat="0.982023 0 0 0.188761" type="mesh" rgba="0.96 0.945 0.871 1" mesh="chopstick"/>
                                     <geom pos="-0.0163708 -0.00697939 0.005274" quat="0.982023 0 0 0.188761" type="mesh" rgba="0.1 0.1 0.1 1" mesh="chopstick_mount_m5" />
                                     <geom pos="0.0164694 0.00612979 0.005274" quat="0.982023 0 0 0.188761" type="mesh" rgba="0.1 0.1 0.1 1" mesh="chopstick_mount_m5" />
@@ -158,41 +157,41 @@
     </contact>
     <actuator>
         <!-- 36 volts
-        <motor class="X8" gear="111.65"  joint="HEBI/base/X8_9"      name="base"/>  
-        <motor class="X8" gear="214.19" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
-        <motor class="X8" gear="111.65"  joint="HEBI/elbow/X8_9"     name="elbow"/>
+        <motor class="X8-9" gear="111.65"  joint="HEBI/base/X8_9"      name="base"/>
+        <motor class="X8-9" gear="214.19" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
+        <motor class="X8-9" gear="111.65"  joint="HEBI/elbow/X8_9"     name="elbow"/>
 
-        <motor class="X5" gear="39.88" joint="HEBI/wrist1/X5_1"    name="wrist1"/>
-        <motor class="X5" gear="39.88" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
-        <motor class="X5" gear="39.88" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
-        <motor class="X5" gear="39.88" joint="HEBI/chopstick/X5_1" name="chop"/>
+        <motor class="X5-1" gear="39.88" joint="HEBI/wrist1/X5_1"    name="wrist1"/>
+        <motor class="X5-1" gear="39.88" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
+        <motor class="X5-1" gear="39.88" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
+        <motor class="X5-1" gear="39.88" joint="HEBI/chopstick/X5_1" name="chop"/>
         -->
 
         <!-- 24 volts -->
         <!--
-        <motor class="X8" gear="74.43"  joint="HEBI/base/X8_9"      name="base"/>  
-        <motor class="X8" gear="142.8" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
-        <motor class="X8" gear="74.43"  joint="HEBI/elbow/X8_9"     name="elbow"/>
+        <motor class="X8-9" gear="74.43"  joint="HEBI/base/X8_9"      name="base"/>
+        <motor class="X8-9" gear="142.8" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
+        <motor class="X8-9" gear="74.43"  joint="HEBI/elbow/X8_9"     name="elbow"/>
 x8 gear 20.97
 x8_16   29.88
 
-        <motor class="X8"    gear="18.92" joint="HEBI/base/X8_9"      name="base" />  
+        <motor class="X8-9"    gear="18.92" joint="HEBI/base/X8_9"      name="base" />
         <motor class="X8_16" gear="37.84" joint="HEBI/shoulder/X8_16" name="shoulder" />
-        <motor class="X8"    gear="18.92" joint="HEBI/elbow/X8_9"     name="elbow" />
+        <motor class="X8-9"    gear="18.92" joint="HEBI/elbow/X8_9"     name="elbow" />
 
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/chopstick/X5_1" name="chop" />
+        <motor class="X5-1"    gear="3.78"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
+        <motor class="X5-1"    gear="3.78"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
+        <motor class="X5-1"    gear="3.78"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
+        <motor class="X5-1"    gear="3.78"  joint="HEBI/chopstick/X5_1" name="chop" />
 -->
-        <motor class="X8"    gear="20" joint="HEBI/base/X8_9"      name="base" />  
+        <motor class="X8-9"    gear="20" joint="HEBI/base/X8_9"      name="base" />
         <motor class="X8_16" gear="38" joint="HEBI/shoulder/X8_16" name="shoulder" />
-        <motor class="X8"    gear="20" joint="HEBI/elbow/X8_9"     name="elbow" />
+        <motor class="X8-9"    gear="20" joint="HEBI/elbow/X8_9"     name="elbow" />
 
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/chopstick/X5_1" name="chop" />
+        <motor class="X5-1"    gear="2.5"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
+        <motor class="X5-1"    gear="2.5"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
+        <motor class="X5-1"    gear="2.5"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
+        <motor class="X5-1"    gear="2.5"  joint="HEBI/chopstick/X5_1" name="chop" />
 
         <!--
         <position kp="100" joint="HEBI/base/X8_9"      name="pbase"/>
@@ -216,7 +215,7 @@ x8_16   29.88
 
     <!--
     <keyframe>
-      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/> 
+      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/>
     </keyframe>
 -->
 </mujoco>
