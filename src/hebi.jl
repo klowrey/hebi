@@ -78,8 +78,8 @@ end
 
     s = maxtorque ./ speed_24v
     maxT = -s .* abs(qvel) .+ maxtorque # where we are on the speed-torque curve
-    d.ctrl .= a .* maxT 
-    d.ctrl .= a .* maxT 
+    d.ctrl .= a .* maxT
+    d.ctrl .= a .* maxT
    t = @. act[i,:] * maxT - (s * abs(vel[i,:]))
 end
 =#
@@ -127,13 +127,13 @@ end
 
 @propagate_inbounds function LyceumMuJoCo.getreward(state, action, obs, env::HebiPickup)
     o = obsspace(env)(obs)
-    
+
     _cs2obj = o.d_obj / 0.5
     _obj2goal = o.d_goal / 0.5
 
     reward = -_cs2obj
     if _cs2obj < 0.006
-        reward = 2.0 - 2 * _obj2goal 
+        reward = 2.0 - 2 * _obj2goal
     end
     reward
 end
