@@ -462,15 +462,15 @@ version = "0.6.3"
 
 [[Lyceum]]
 deps = ["LyceumAI", "LyceumBase", "LyceumMuJoCo", "LyceumMuJoCoViz", "MuJoCo", "Pkg", "Reexport", "Shapes", "UniversalLogger"]
-git-tree-sha1 = "9c003633719df48f313b773f28b3af27a2b7fcc1"
+git-tree-sha1 = "35d75cb9627dac4a3331765d23953c223aa86e3d"
 uuid = "f25b5985-59c0-418b-a573-42c079f3f644"
-version = "0.2.0"
+version = "0.3.0"
 
 [[LyceumAI]]
 deps = ["Base64", "Distances", "DocStringExtensions", "EllipsisNotation", "FastClosures", "Flux", "Future", "IterativeSolvers", "LearnBase", "LinearAlgebra", "LyceumBase", "LyceumMuJoCo", "MLDataPattern", "MacroTools", "MuJoCo", "MuJoCo_jll", "Parameters", "Random", "Shapes", "StaticArrays", "Statistics", "UniversalLogger", "UnsafeArrays", "Zygote"]
-git-tree-sha1 = "d4011028f54dfe0a839ed037eb912c529f14c5b3"
+git-tree-sha1 = "d4748724dbc22a4b7fbc04df92bb6f9090750347"
 uuid = "6917c76a-ac01-4302-a33e-8c456ab70f71"
-version = "0.2.0"
+version = "0.2.1"
 
 [[LyceumBase]]
 deps = ["Adapt", "BenchmarkTools", "Dates", "Distributions", "ElasticArrays", "EllipsisNotation", "Future", "InteractiveUtils", "JLSO", "LibGit2", "LinearAlgebra", "Logging", "MacroTools", "Parameters", "Pkg", "Random", "Shapes", "StaticArrays", "Statistics", "Test", "TimeZones", "UnicodePlots", "UniversalLogger", "UnsafeArrays"]
@@ -480,15 +480,15 @@ version = "0.2.0"
 
 [[LyceumMuJoCo]]
 deps = ["Distances", "Distributions", "DocStringExtensions", "LinearAlgebra", "LyceumBase", "MuJoCo", "Random", "Reexport", "Shapes", "StaticArrays", "Statistics", "UnsafeArrays"]
-git-tree-sha1 = "e6c86deee222f7c20309f1caf69a633b1c4cd4c6"
+git-tree-sha1 = "4138207cd721d925142604fa83dc012b22bdb5e9"
 uuid = "48b9757e-04b8-4dbf-b6ed-75c13d9e4026"
-version = "0.2.0"
+version = "0.2.1"
 
 [[LyceumMuJoCoViz]]
 deps = ["BangBang", "DocStringExtensions", "FFMPEG", "GLFW", "LyceumBase", "LyceumMuJoCo", "MuJoCo", "Observables", "Printf", "Shapes", "StaticArrays"]
-git-tree-sha1 = "26901122cc3d3036dec73e6d5a13036f3cb880e3"
+git-tree-sha1 = "fa19e2e0cc00db604cb3f954b1af07e7d1fa8464"
 uuid = "409fd311-7925-44f6-a514-6be572b34fdd"
-version = "0.2.1"
+version = "0.2.3"
 
 [[MKL_jll]]
 deps = ["IntelOpenMP_jll", "Libdl", "Pkg"]
@@ -552,9 +552,9 @@ version = "0.7.1"
 
 [[MuJoCo]]
 deps = ["AxisArrays", "BangBang", "Base64", "CEnum", "LinearAlgebra", "MacroTools", "MuJoCo_jll", "Reexport", "StaticArrays", "UnsafeArrays"]
-git-tree-sha1 = "632b464252c88aa4862a38f56620c1baa5a9ece4"
+git-tree-sha1 = "cacfbec55ae951693a9043e4fc1df825e8964f3e"
 uuid = "93189219-7048-461c-94ec-443a161ed927"
-version = "0.2.0"
+version = "0.3.0"
 
 [[MuJoCo_jll]]
 deps = ["GLEW_jll", "GLFW_jll", "Libdl", "Libglvnd_jll", "Pkg"]
