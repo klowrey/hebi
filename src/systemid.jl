@@ -169,7 +169,7 @@ function sysid(refstate, test::HebiPickup, ctrls; optm=:NM,
                             iterations=40000, time_limit=60*60)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
-        result = optimize(p->opt(p, test), lower, upper, initP,
+        result = optimize(p->opt(p, test), initP, lower, upper, initP,
                           Fminbox(NelderMead()), options) # probably need custom simplex initializer
         setparams!(test, result.minimizer)#, modelvars)
     elseif optm == :LBFGS
@@ -283,7 +283,7 @@ function testSysidOnevar(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=
     return result
 end
 
-function testSysid(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=:NM)
+function testSysidEasy(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=:NM)
     modelvars, getparams!, setparams! = getHebiModelVars()
 
     initP = allocate(modelvars)
@@ -295,9 +295,37 @@ function testSysid(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=:NM)
     ctrls == nothing && (ctrls = getHebiSinCtrl(ref))
     traj = _rollout(ref, ctrls)
 
-    randset!(test, ref)
-    getparams!(initP, test)
+    getparams!(initP, ref)
+    initP .+= 0.01
+    clamp!(initP, 0.001, 4.999)
+    setparams!(test, initP)
+    println("Disturbed params: ", initP)
+
+    result = sysid(traj.obses, test, ctrls; optm=optm, lower=0.0001, upper=5.0)
+
+    getparams!(initP, ref)
+    println("Diff from reference model:")
+    println(round.(initP .- result.minimizer, digits=3))
+
+    return result
+end
+
+
+function testSysidHard(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=:NM)
+    modelvars, getparams!, setparams! = getHebiModelVars()
+
+    initP = allocate(modelvars)
+    getparams!(initP, ref)
     clamp!(initP, 0.001, 4.9)
+    println("Initial params: ", initP)
+
+    reset!(ref)
+    ctrls == nothing && (ctrls = getHebiSinCtrl(ref))
+    traj = _rollout(ref, ctrls)
+
+    randreset!(test, ref)
+    getparams!(initP, test)
+    clamp!(initP, 0.001, 4.999)
     setparams!(test, initP)
     println("Disturbed params: ", initP)
 
