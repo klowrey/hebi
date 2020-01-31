@@ -67,6 +67,7 @@ end
     env
 end
 
+#=
 @propagate_inbounds function LyceumMuJoCo.setaction!(env::HebiPickup, a)
 
     maxtorque = SVector{7, Float64}(20.0, 38.0, 20.0, 2.5, 2.5, 2.5, 2.5)
@@ -81,6 +82,7 @@ end
     d.ctrl .= a .* maxT 
    t = @. act[i,:] * maxT - (s * abs(vel[i,:]))
 end
+=#
 
 @inline _sitedist(s1, s2, dmin) = min(euclidean(s1, s2), dmin)
 @propagate_inbounds function LyceumMuJoCo.getobs!(obs, env::HebiPickup)
