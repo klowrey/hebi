@@ -42,3 +42,16 @@ julia> result.minimizer
 
 The `gradsysid` function is an example of LBFGS optimization with a finite differenced
 graddient function that uses multi-threading. It may be currently buggy.
+
+
+# SysID
+
+```julia
+julia> include("src/runhebi.jl")
+julia> h = HebiPickup()
+julia> dt, pos, vel, act, eff = datafile("data/example2.csv")
+julia> result = filesysid(vcat(pos, vel), h, act; optm=:LBFGS, batch=6000:10000)
+julia> hebivars = gethebivars()
+julia> hv = hebivars(result.minimizer)
+julia> hv.x8_damping
+```
