@@ -1,23 +1,33 @@
 
-function plotdif_ref(env::HebiPickup, pos, vel, ctrls::AbstractMatrix)
+function hebiroll(env, act)
+    env.sim.d.qpos .= pos[:,1]
+    env.sim.d.qvel .= vel[:,1]
+    env.sim.d.ctrl .= act[:,1]
+    forward!(env.sim)
+    traj = _sysidrollout(env, act)
+end
+
+function plotdif_ref(env::HebiPickup, pos, vel, act::AbstractMatrix)
     reset!(env)
 
     env.sim.d.qpos .= pos[:,1]
     env.sim.d.qvel .= vel[:,1]
-
-    traj = _rollout(env, ctrls)
-    ref = copy(traj.states)
-    ref[2:8, :]  .= pos
-    ref[9:15, :] .= vel
-    ref[16:end, :] .= 0.0
+    env.sim.d.ctrl .= act[:,1]
+    forward!(env.sim)
+    traj = _sysidrollout(env, act)
+    #ref = copy(traj.states)
+    #ref[2:8, :]  .= pos
+    #ref[9:15, :] .= vel
+    #ref[16:end, :] .= 0.0
 
     #reset!(env)
     #visualize(env, trajectories=[ref, traj.states])
-    return traj.states[2:8,:], traj.states[9:15,:]
+    #return traj.states[2:8,:], traj.states[9:15,:]
+    return traj.obses[1:7,:], traj.obses[8:14,:]
 end
 
-function plotx8(env, pos, vel, ctrls, r=1:size(pos,2), pr=1:3)
-   npos, nvel = plotdif_ref(env, pos[:,r], vel[:,r], ctrls[:,r])
+function plotx8(env, pos, vel, act, r=1:size(pos,2), pr=1:3)
+   npos, nvel = plotdif_ref(env, pos[:,r], vel[:,r], act[:,r])
 
    println("Poss")
    println(mse(pos[pr,r], npos[pr,:]))
@@ -60,12 +70,14 @@ function testctrl(h, act, vel, eff, i)
 
    #println(s, " ", slope[i])
    #t = @. slope[i] * vel[i,:] + act[i,:] * max_torque[i]
-   maxT = @. -s * abs(vel[i,:]) + max_torque[i] # where we are on the speed-torque curve
-   t = @. act[i,:] * maxT - (s * abs(vel[i,:]))
+   #maxT = @. -s * abs(vel[i,:]) + max_torque[i] # where we are on the speed-torque curve
+   maxT = @. s * vel[i,:] + max_torque[i] # where we are on the speed-torque curve
+   #maxT = @. -s * vel[i,:] + max_torque[i] # where we are on the speed-torque curve
+   t = @. act[i,:] * maxT #- (s * abs(vel[i,:]))
 
    return t
 end
 
 
-dt, pos, vel, act, eff = datafile("data/wrist1-v.csv", 7);
-i = 4; p!(p(eff[i,:], width=140, xlim=(80,40000)), testctrl(h, act, vel, eff, i))
+#dt, pos, vel, act, eff = datafile("data/wrist1-v.csv", 7);
+#i = 4; p!(p(eff[i,:], width=140, xlim=(80,40000)), testctrl(h, act, vel, eff, i))

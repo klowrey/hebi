@@ -6,8 +6,11 @@ using Base: @propagate_inbounds
 using Random
 import LyceumBase: tconstruct, _rollout
 using Statistics, StaticArrays, UnsafeArrays
+using Base.Iterators
 using Distributions, Distances
 using MuJoCo
+
+using CSV
 
 using Optim
 using LineSearches
@@ -17,59 +20,11 @@ using Distributed
 using SharedArrays
 
 include("hebi.jl")
-
-function hebiMPPI(etype = HebiPickup; T = 100, H = 32, K = 24, lambda=0.5)
-    env = etype()
-
-    ## The following parameters work well for this get-up task, and may work for
-    ## similar tasks, but are not invariant to the model.
-    a = getaction(env)
-    a[1:7]   .= 0.2
-    a[8:end] .= 0.0001
-
-    mppi = MPPI(
-        env_tconstructor = n -> tconstruct(etype, n),
-        covar = Diagonal(a.^2),
-        lambda = lambda,
-        H = H,
-        K = K,
-        gamma = 1.0,
-    )
-
-    #iter = ControllerIterator(mppi, env; T = T, plotiter = div(T, 2), randstart = true)
-
-    ### We can time the following loop; if it ends up less than the time the
-    ### MuJoCo models integrated forward in, then one could conceivably run this
-    ### MPPI MPC controller interactively...
-    #elapsed = @elapsed for (t, traj) in iter
-    #    ## If desired, one can inspect `traj`, `env`, or `mppi` at each timestep.
-    #end
-
-    #println("$elapsed / $(time(env)) : $(elapsed / time(env))")
-    #if elapsed < time(env)
-    #    @info "We ran in real time!"
-    #end
-
-    return mppi, env #, iter.trajectory
-end
+include("util.jl")
+include("controls.jl")
 
 
-## TODO some kind of struct to map from vector to fields and structs?
 
-function randset!(h2, h1)
-    h2.sim.m.dof_damping[1:3]      .= h1.sim.m.dof_damping[1] .+ rand(Uniform(-0.05, 4.5), 3)
-    h2.sim.m.dof_damping[4:7]      .= h1.sim.m.dof_damping[4] .+ rand(Uniform(-0.05, 4.5), 4)
-    h2.sim.m.dof_armature[1:3]     .= h1.sim.m.dof_armature[1] .+ rand(Uniform(0, 10.2), 3)
-    h2.sim.m.dof_armature[4:7]     .= h1.sim.m.dof_armature[4] .+ rand(Uniform(0, 10.2), 4)
-    h2.sim.m.dof_frictionloss[1:3] .= h1.sim.m.dof_frictionloss[1] .+ rand(Uniform(-0.05, 3.5), 3)
-    h2.sim.m.dof_frictionloss[4:7] .= h1.sim.m.dof_frictionloss[4] .+ rand(Uniform(-0.05, 3.5), 4)
-    h2
-end
-function resetset!(h2, h1)
-    h2.sim.m.dof_damping      .= h1.sim.m.dof_damping
-    h2.sim.m.dof_armature     .= h1.sim.m.dof_armature
-    h2.sim.m.dof_frictionloss .= h1.sim.m.dof_frictionloss
-end
 
 function sysidfromfile(s, test::HebiPickup; optm=:NM, batch=nothing)
     dt, pos, vel, act = datafile(s)
@@ -80,7 +35,7 @@ function sysidfromfile(s, test::HebiPickup; optm=:NM, batch=nothing)
     return filesysid(vcat(pos, vel), test, act; optm = optm, batch=batch)
 end
 
-function datafile(s="example.csv", nv=7)
+function datafile(s="example.csv", nv=7, skip=4)
     d = CSV.read(s)
     println(names(d))
     r, c = size(d)
@@ -101,96 +56,92 @@ function datafile(s="example.csv", nv=7)
     dt = (d.timestamp_us .- d.timestamp_us[1]) * 1e-6
 
     # to currently match the 0.004 DT model (dt = 0.002 with skip = 2)
-    #return dt[2:4:end], pos[:,2:4:end], vel[:,2:4:end], act[:,2:4:end]
-    return dt, pos, vel, act, eff 
+    if skip > 1
+        dt = dt[2:skip:end]
+        println("Average dt, processed: ", mean(diff(dt)))
+        println("num datapoints: ", size(dt, 1))
+        return dt, pos[:,2:skip:end], vel[:,2:skip:end], act[:,2:skip:end], eff[:,2:skip:end]
+    else
+        println("Average dt, raw: ", mean(diff(dt)))
+        return dt, pos, vel, act, eff 
+    end
 end
 
-function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(refstate, 2))
-    #modelvars = MultiShape(x8_damping      = ScalarShape(Float64),
-    #                       x5_damping      = ScalarShape(Float64),
-    #                       x8_armature     = ScalarShape(Float64),
-    #                       x5_armature     = ScalarShape(Float64),
-    #                       x8_frictionloss = ScalarShape(Float64),
-    #                       x5_frictionloss = ScalarShape(Float64),
-    #                       x8_gear         = ScalarShape(Float64),
-    #                       x8_16_gear      = ScalarShape(Float64),
-    #                       x5_gear         = ScalarShape(Float64),
-    #                      )
-    modelvars = MultiShape(x8_damping      = ScalarShape(Float64),
-                           x8_armature     = ScalarShape(Float64),
-                           x8_frictionloss = ScalarShape(Float64),
-                           x8_gear         = ScalarShape(Float64),
-                           x8_16_damping      = ScalarShape(Float64),
-                           x8_16_armature     = ScalarShape(Float64),
-                           x8_16_frictionloss = ScalarShape(Float64),
-                           x8_16_gear      = ScalarShape(Float64),
-                          )
-    #modelvars = MultiShape(x5_damping      = ScalarShape(Float64),
-    #                       x5_armature     = ScalarShape(Float64),
-    #                       x5_frictionloss = ScalarShape(Float64),
-    #                       x5_gear         = ScalarShape(Float64),
-    #                      )
-    scalingfactor = ones(6) #[ 100.0, 10.0,
-                    #    1.0, 1.0,
-                    #   10.0, 10.0
-                    #]
+function gethebivars()
+    return MultiShape(x8_damping         = ScalarShape(Float64),
+                      x8_armature        = ScalarShape(Float64),
+                      x8_frictionloss    = ScalarShape(Float64),
+                      x8_maxT            = ScalarShape(Float64),
+                      x8_ramp            = ScalarShape(Float64),
+
+                      x8_16_damping      = ScalarShape(Float64),
+                      x8_16_armature     = ScalarShape(Float64),
+                      x8_16_frictionloss = ScalarShape(Float64),
+                      x8_16_maxT         = ScalarShape(Float64),
+                      x8_16_ramp         = ScalarShape(Float64),
+
+                      x5_damping         = ScalarShape(Float64),
+                      x5_armature        = ScalarShape(Float64),
+                      x5_frictionloss    = ScalarShape(Float64),
+                      x5_maxT            = ScalarShape(Float64),
+                      x5_ramp            = ScalarShape(Float64)
+                     )
+end
+
+function setparams!(env, p::AbstractVector, varspace)
+    mp = varspace(p)
+    m = env.sim.m
+
+    m.dof_damping[[1,3]]        .= mp.x8_damping
+    m.dof_armature[[1,3]]       .= mp.x8_armature
+    m.dof_frictionloss[[1,3]]   .= mp.x8_frictionloss
+    m.actuator_biasprm[1,[1,3]] .= mp.x8_maxT
+    m.actuator_biasprm[2,[1,3]] .= mp.x8_ramp
+
+    m.dof_damping[2]             = mp.x8_16_damping
+    m.dof_armature[2]            = mp.x8_16_armature
+    m.dof_frictionloss[2]        = mp.x8_16_frictionloss
+    m.actuator_biasprm[1,2]      = mp.x8_16_maxT
+    m.actuator_biasprm[2,2]      = mp.x8_16_ramp
+
+    m.dof_damping[4:7]          .= mp.x5_damping
+    m.dof_armature[4:7]         .= mp.x5_armature
+    m.dof_frictionloss[4:7]     .= mp.x5_frictionloss
+    m.actuator_biasprm[1,4:7]   .= mp.x5_maxT
+    m.actuator_biasprm[2,4:7]   .= mp.x5_ramp
+
+    env
+end
+function getparams!(p::AbstractVector, env, varspace)
+    mp = varspace(p)
+    m = env.sim.m
+
+    mp.x8_damping         = m.dof_damping[1]
+    mp.x8_armature        = m.dof_armature[1]
+    mp.x8_frictionloss    = m.dof_frictionloss[1]
+    mp.x8_maxT            = m.actuator_biasprm[1,1]
+    mp.x8_ramp            = m.actuator_biasprm[2,1]
+
+    mp.x8_16_damping      = m.dof_damping[2]
+    mp.x8_16_armature     = m.dof_armature[2]
+    mp.x8_16_frictionloss = m.dof_frictionloss[2]
+    mp.x8_16_maxT         = m.actuator_biasprm[1,2]
+    mp.x8_16_ramp         = m.actuator_biasprm[2,2]
+
+    mp.x5_damping         = m.dof_damping[4]
+    mp.x5_armature        = m.dof_armature[4]
+    mp.x5_frictionloss    = m.dof_frictionloss[4]
+    mp.x5_maxT            = m.actuator_biasprm[1,4]
+    mp.x5_ramp            = m.actuator_biasprm[2,4]
+
+    env
+end
+
+function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
+                   optm=:NM, batch = 1:size(refstate, 2), horizon=batch[end])
     N = length(modelvars)
-    function setparams!(env, p::AbstractVector, varspace)
-        mp = varspace(p)
-        m = env.sim.m
-        ##env.sim.m.dof_damping[1:3]      .= scalingfactor[1] * mp.x8_damping
-        #m.dof_damping[1]      = scalingfactor[1] * mp.x8_damping
-        #m.dof_damping[2]      = 2 * scalingfactor[1] * mp.x8_damping
-        #m.dof_damping[3]      = scalingfactor[1] * mp.x8_damping
-        ##m.dof_damping[4:7]      .= scalingfactor[2] * mp.x5_damping
-        #m.dof_armature[1:3]     .= scalingfactor[3] * mp.x8_armature
-        ##m.dof_armature[4:7]     .= scalingfactor[4] * mp.x5_armature
-        #m.dof_frictionloss[1:3] .= scalingfactor[5] * mp.x8_frictionloss
-        ##m.dof_frictionloss[4:7] .= scalingfactor[6] * mp.x5_frictionloss
-
-        m.dof_damping[1]      = mp.x8_damping
-        m.dof_damping[2]      = mp.x8_16_damping
-        m.dof_damping[3]      = mp.x8_damping
-        m.dof_armature[1]     = mp.x8_armature
-        m.dof_armature[2]     = mp.x8_16_armature
-        m.dof_armature[3]     = mp.x8_armature
-        m.dof_frictionloss[1] = mp.x8_frictionloss
-        m.dof_frictionloss[2] = mp.x8_16_frictionloss
-        m.dof_frictionloss[3] = mp.x8_frictionloss
-
-        m.actuator_gear[1,1]    = mp.x8_gear
-        m.actuator_gear[1,2]    = mp.x8_16_gear
-        m.actuator_gear[1,3]    = mp.x8_gear
-        #m.actuator_gear[1,4:7] .= mp.x5_gear
-
-        env
-    end
-    function getparams!(p::AbstractVector, env, varspace)
-        mp = varspace(p)
-        m = env.sim.m
-        #mp.x8_damping      = m.dof_damping[1]      / scalingfactor[1] 
-        ##mp.x5_damping      = m.dof_damping[4]      / scalingfactor[2]
-        #mp.x8_armature     = m.dof_armature[1]     / scalingfactor[3]
-        ##mp.x5_armature     = m.dof_armature[4]     / scalingfactor[4]
-        #mp.x8_frictionloss = m.dof_frictionloss[1] / scalingfactor[5]
-        ##mp.x5_frictionloss = m.dof_frictionloss[4] / scalingfactor[6]
-
-        mp.x8_gear    = m.actuator_gear[1,1]
-        mp.x8_16_gear = m.actuator_gear[1,2]
-        #mp.x5_gear    = m.actuator_gear[1,4]
-
-        mp.x8_damping         = m.dof_damping[1]      
-        mp.x8_16_damping      = m.dof_damping[2]      
-        mp.x8_armature        = m.dof_armature[1]     
-        mp.x8_16_armature     = m.dof_armature[2]     
-        mp.x8_frictionloss    = m.dof_frictionloss[1] 
-        mp.x8_16_frictionloss = m.dof_frictionloss[2] 
-
-        env
-    end
-
     osp = obsspace(test)
-    s = length(osp.qpos) + length(osp.qvel) #- 6 # ignore the object's data for now
+    s = size(refstate, 1) # length(osp.qpos) + length(osp.qvel) #- 6 # ignore the object's data for now
     println(s)
 
     #batch = 1500:8000 #1000:6000
@@ -201,22 +152,50 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(r
         setparams!(env, P, modelvars)
 
         reset!(env)
-        env.sim.d.qpos .= Y[1:7,  batch.start]
-        env.sim.d.qvel .= Y[8:14, batch.start]
-        env.sim.d.ctrl .= ctrls[:,batch.start]
+        env.sim.d.qpos .= view(Y, 1:7,  batch[1])
+        env.sim.d.qvel .= view(Y, 8:14, batch[1])
+        env.sim.d.ctrl .= view(ctrls,:, batch[1])
         forward!(env.sim)
-        roll = _rollout(env, ctrls[:,batch])
+        roll = _sysidrollout(env, view(ctrls, :,batch))
 
         #return mse(Y[:,batch], roll.obses[1:s,:]) # from LyceumAI
-        idx = 1:3 #4:6
+        idx = 1:7 #4:6
         vid = nq .+ idx
-        return mse(Y[idx,batch], roll.obses[idx,:]) + mse(Y[vid,batch], roll.obses[vid,:])
-        #return mse(Y[1:7,batch], roll.obses[1:7,:]) + mse(10 .* Y[8:14,batch], 10 .* roll.obses[8:14,:])
+        return mse(Y[idx,batch], roll.obses[idx,:]) + 5*mse(Y[vid,batch], roll.obses[vid,:])
     end
 
     tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
+    shared = tconstruct(HebiPickup, Threads.nthreads()) # shared model for parallel rollouts
+    function t_opt(P, env=test, Y=refstate; batch=batch, horizon=horizon, nthreads=Threads.nthreads())
+
+        batches = collect(partition(batch, horizon))
+        length(batches[end]) < length(batches[1]) && pop!(batches)
+        nbatch = length(batches)
+
+        threadrange = collect(partition(1:nbatch, max(1,div(nbatch, nthreads))))
+        
+        cost = zeros(nthreads)
+        @sync for i=1:min(length(threadrange), nthreads)
+            Threads.@spawn begin
+                tid = Threads.threadid() 
+                for b in batches[threadrange[i]]
+                    cost[i] += opt(P, tests[tid], Y, b)
+                end
+                cost[i] /= length(threadrange[i])
+            end
+        end
+        #Threads.@threads for b in batches
+        #for b in batches
+        #    tid = Threads.threadid()
+        #    if length(b) == horizon # only get full batches
+        #        cost[tid] += opt(P, tests[tid], Y, b)
+        #    end
+        #end
+        return sum(cost) / length(threadrange) 
+    end
+
     Peps = [ zeros(N) for i=1:N+1 ]
-    function optgrad!(storage, P, ep=1e-4)
+    function optgrad!(storage, P, ep=1e-3)
         for i=1:N
             Peps[i] .= P
             Peps[i][i] += ep 
@@ -226,7 +205,8 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(r
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
             tid = Threads.threadid() 
-            cache[i] = opt(Peps[i], tests[tid]) #- z) / ep
+            #cache[i] = t_opt(Peps[i], tests[tid], nthreads=1)
+            cache[i] = opt(Peps[i], tests[tid])
         end
         storage .= (cache[1:N] .- cache[end]) ./ ep
     end
@@ -234,24 +214,27 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(r
     initP = allocate(modelvars)
     getparams!(initP, test, modelvars)
     println(initP)
+    println(N)
     hi = 2.0
-    lo = 0.001
-    #Jj clamp!(initP, 2*lo, hi - 1e-4)
-    lower = fill(lo, N) # approx upper and lower bounds? can specialize more...
-    #upper = [50.0, 10.0, 5, 5, 5, 5, 100, 100] #fill(1.0, N)
-    #upper = [10.0, 5, 5, 100] # 4:6
-    upper = [100.0, 5, 5, 100, 100.0, 5, 5, 100] # 1:3
+    lo = 0.01
+    #lower = fill(lo, N) # approx upper and lower bounds? can specialize more...
+    lower = initP .* 0.5
+    upper = initP .* 1.1 .+ 2.0
+    println("upper:")
+    display(upper)
 
     options = Optim.Options(allow_f_increases=false,
-                            show_trace=true, show_every=10,
-                            iterations=40000, time_limit=60*60)
+                            #outer_iterations=20, # fminbox iterations
+                            show_trace=true, show_every=10, x_tol=1e-3, g_tol=1e-5,
+                            iterations=40000, time_limit=60*160)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
-        result = optimize(opt, lower, upper, initP, Fminbox(NelderMead()), options) # probably need custom simplex initializer
+        result = optimize(t_opt, lower, upper, initP, Fminbox(NelderMead()), options) # probably need custom simplex initializer
         setparams!(test, result.minimizer, modelvars)
     elseif optm == :LBFGS
         #result = optimize(opt, lower, upper, initP, Fminbox(LBFGS()), options)
-        result = optimize(p->opt(p, test), optgrad!,
+        #result = optimize(t_opt, optgrad!,
+        result = optimize(opt, optgrad!,
                           lower, upper, initP,
                           Fminbox(LBFGS(alphaguess = LineSearches.InitialQuadratic(),
                                         linesearch = LineSearches.BackTracking())),
@@ -259,8 +242,8 @@ function filesysid(refstate, test::HebiPickup, ctrls; optm=:NM, batch = 1:size(r
         setparams!(test, result.minimizer, modelvars)
     elseif optm == :PS
         @warn "optimizer $optm not configured yet."
-        #result = optimize(opt, initP,
-        #                  ParticleSwarm(lower=lower, upper=upper, n_particles=18), options) # doesn't work?
+        result = optimize(opt, initP,
+                          ParticleSwarm(lower=lower, upper=upper, n_particles=18), options) # doesn't work?
     elseif optm == :BBO
         # probably needs much more parallel evals to be useful
         nworkers() == 1 && addprocs(Threads.nthreads())
@@ -322,7 +305,7 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
         setparams!(env, P)
 
         reset!(env)
-        roll = _rollout(env, ctrls)
+        roll = _sysidrollout(env, ctrls)
 
         return mse(Y, roll.obses[1:s,:]) # from LyceumAI
     end
@@ -411,80 +394,6 @@ function sinfn(env)
     #d.ctrl[9]  = 1.0   # when using position control
     #d.ctrl[10] = 1.0
     #d.ctrl[14] = -0.21
-end
-
-function getsincontrols(env, T=2000)
-    reset!(env)
-    actions = zeros(length(actionspace(env)), T)
-    for t=1:T
-        sinfn(env) # set controls
-        getaction!(view(actions, :, t), h) # save actions
-        step!(env)
-    end
-    reset!(env)
-    return actions
-end
-
-function sinctrl(env::HebiPickup)
-    visualize(env, controller=sinfn)
-end
-
-function vizdif_ref(env::HebiPickup, pos, vel, ctrls::AbstractMatrix)
-    reset!(env)
-
-    env.sim.d.qpos .= pos[:,1]
-    env.sim.d.qvel .= vel[:,1]
-
-    traj = _rollout(env, ctrls)
-    ref = copy(traj.states)
-    ref[2:8, :]  .= pos
-    ref[9:15, :] .= vel
-    ref[16:end, :] .= 0.0
-
-    #reset!(env)
-    visualize(env, trajectories=[ref, traj.states])
-    return traj.states[2:8,:], traj.states[9:15,:]
-end
-
-function vizdif(env::HebiPickup, env2::HebiPickup,
-                ctrls::AbstractMatrix)
-    reset!(env);  traj = _rollout(env, ctrls)
-    reset!(env2); data = _rollout(env2, ctrls)
-
-    println(mse(data.obses, traj.obses))
-    visualize(env, trajectories=[traj.states, data.states])
-end
-
-function jacctrl(env::HebiPickup)
-    jacp = zeros(env.sim.m.nv, 3)
-    jacr = zeros(env.sim.m.nv, 3)
-
-    function ctrlfn(env)
-        m, d = env.sim.m, env.sim.d
-        MuJoCo.MJCore.mj_jacSite(m, d, vec(jacp), vec(jacr), 0) # not 1-based indexing??
-
-        # have the object as the target site
-        delta = SPoint3D(d.geom_xpos, m.ngeom) - SPoint3D(d.site_xpos, 1)
-
-        #d.ctrl[1:7] .= jacp[:,1:7]' * delta
-        d.ctrl[1:7] .= 15.0 .* jacp[1:7, :] * delta
-        d.ctrl[9]  = 1.0   # when using position control
-        d.ctrl[10] = 1.0
-        d.ctrl[14] = -0.21
-    end
-    visualize(env, controller=ctrlfn)
-end
-
-function viz_mppi(mppi::MPPI, env::HebiPickup)
-    a = allocate(actionspace(env))
-    o = allocate(obsspace(env))
-    s = allocate(statespace(env))
-    function ctrlfn(env) 
-        getstate!(s, env)
-        getaction!(a, s, o, mppi)
-        setaction!(env, a)
-    end
-    visualize(env, controller=ctrlfn)
 end
 
 # One var testing

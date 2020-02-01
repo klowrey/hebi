@@ -104,9 +104,9 @@ version = "5.0.1"
 
 [[CUDAnative]]
 deps = ["Adapt", "CEnum", "CUDAapi", "CUDAdrv", "DataStructures", "InteractiveUtils", "LLVM", "Libdl", "Printf", "TimerOutputs"]
-git-tree-sha1 = "ba0725f487fb4a6c63efad7890a659659b6a6754"
+git-tree-sha1 = "e0c2805c9a7d338823c0d8f574242e284410fa61"
 uuid = "be33ccc6-a3ff-5ff2-a52e-74243cff1e17"
-version = "2.8.1"
+version = "2.9.1"
 
 [[CategoricalArrays]]
 deps = ["Compat", "DataAPI", "Future", "JSON", "Missings", "Printf", "Reexport", "Statistics", "Unicode"]
@@ -558,15 +558,15 @@ version = "0.2.0"
 
 [[MuJoCo_jll]]
 deps = ["GLEW_jll", "GLFW_jll", "Libdl", "Libglvnd_jll", "Pkg"]
-git-tree-sha1 = "6218f6fb60651ac5cfd5c549545f8a38e24cb20c"
+git-tree-sha1 = "500ed43eebb61f915cc6910d3a9afda225655fcc"
 uuid = "32af7c3b-80ec-5621-8194-2f6cb2280831"
-version = "2.0.0+0"
+version = "2.0.0+1"
 
 [[NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
-git-tree-sha1 = "b13b1f97ce88a37dd55ce7ae7e75b81002bf2b9d"
+git-tree-sha1 = "7c4e66c47848562003250f28b579c584e55becc0"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
-version = "7.6.0"
+version = "7.6.1"
 
 [[NNlib]]
 deps = ["BinaryProvider", "Libdl", "LinearAlgebra", "Requires", "Statistics"]
@@ -623,9 +623,9 @@ version = "0.12.0"
 
 [[Parsers]]
 deps = ["Dates", "Test"]
-git-tree-sha1 = "0139ba59ce9bc680e2925aec5b7db79065d60556"
+git-tree-sha1 = "d112c19ccca00924d5d3a38b11ae2b4b268dda39"
 uuid = "69de0a69-1ddd-5017-9359-2bf0b02dc9f0"
-version = "0.3.10"
+version = "0.3.11"
 
 [[Pkg]]
 deps = ["Dates", "LibGit2", "Libdl", "Logging", "Markdown", "Printf", "REPL", "Random", "SHA", "Test", "UUIDs"]

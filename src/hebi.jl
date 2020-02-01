@@ -11,6 +11,7 @@ struct HebiPickup{S<:MJSim, O} <: AbstractMuJoCoEnvironment
         #Josp = MultiShape(qpos = VectorShape(Float64, m.nq-7),  ## TODO OBJECT# no object
         osp = MultiShape(qpos = VectorShape(Float64, m.nq), # no object
                          qvel = VectorShape(Float64, m.nv),
+                         eff  = VectorShape(Float64, m.nv),
                          obj  = VectorShape(Float64, 3),
                          cpsk  = VectorShape(Float64, 3), # chopstick site
                          d_obj  = ScalarShape(Float64), # distance
@@ -67,19 +68,27 @@ end
     env
 end
 
+function _splat7(x::AbstractMatrix, i)
+   SA_F64[x[i,1], x[i,2], x[i,3], x[i,4], x[i,5], x[i,6], x[i,7]]
+end
+
 @propagate_inbounds function LyceumMuJoCo.setaction!(env::HebiPickup, a)
+    #maxtorque = SVector{7, Float64}(20.0, 38.0, 20.0, 2.5, 2.5, 2.5, 2.5)
+    #speed_24v = SVector{7, Float64}(3.267, 1.759, 3.267, 14.074, 14.074, 14.074, 14.074) # rad/sec / volt * 24v
+    maxtorque = _splat7(env.sim.m.actuator_biasprm, 1)
+    speed_24v = _splat7(env.sim.m.actuator_biasprm, 2)
 
-    maxtorque = SVector{7, Float64}(20.0, 38.0, 20.0, 2.5, 2.5, 2.5, 2.5)
-    #vellimits = SVector{7, Float64}(3.14, 1.57, 3.14, 9.42, 9.42, 9.42, 9.42)
-    speed_24v = SVector{7, Float64}(3.267, 1.759, 3.267, 14.074, 14.074, 14.074, 14.074) # rad/sec / volt * 24v
+    qvel = SVector{7, Float64}(env.sim.d.qvel)
+    #ctrl = SVector{7, Float64}(a)
 
-    qvel = SVector{7, Float64}(d.qvel)
+    #scale = (maxtorque ./ speed_24v) .* qvel
+    #maxT = scale .+ maxtorque # where we are on the speed-torque curve; y=mx+b
+    #env.sim.d.ctrl .= ctrl .* maxT .+ scale
 
-    s = maxtorque ./ speed_24v
-    maxT = -s .* abs(qvel) .+ maxtorque # where we are on the speed-torque curve
-    d.ctrl .= a .* maxT 
-    d.ctrl .= a .* maxT 
-   t = @. act[i,:] * maxT - (s * abs(vel[i,:]))
+    maxT = (maxtorque ./ speed_24v) .* abs.(qvel) .+ maxtorque
+    env.sim.d.ctrl .= a .* maxT #.+ (maxtorque ./ speed_24v) .* qvel
+    #env.sim.d.ctrl .= a .* maxtorque #.+ (maxtorque ./ speed_24v) .* qvel
+    env
 end
 
 @inline _sitedist(s1, s2, dmin) = min(euclidean(s1, s2), dmin)
@@ -100,6 +109,7 @@ end
         #o.qpos .= view(qpos, 1:(m.nq-7)) ## TODO OBJECT
         o.qpos .= view(qpos, 1:(m.nq))
         o.qvel .= view(qvel, 1:m.nv)
+        o.eff  .= d.qfrc_actuator
         o.obj  .= _obj
         o.cpsk .= _cpsk
         o.d_obj  = _sitedist(_obj, _cpsk, dmin)

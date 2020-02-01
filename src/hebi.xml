@@ -26,19 +26,19 @@
         <geom contype="0" conaffinity="0" />
 
         <default class="X8">
-            <joint damping="15.6" armature="0.598" frictionloss="0.512" limited="false" /> -->
+            <joint damping="16.92" armature="1.204" frictionloss="2.55" limited="false" /> -->
             <position forcelimited="true" forcerange="-20 20" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
             <motor    forcelimited="true" forcerange="-20 20" ctrllimited="true" ctrlrange="-1 1" />
         </default>
         <default class="X8_16">
-            <joint damping="38.2" armature="3.269" frictionloss="1.416" limited="false" /> -->
+            <joint damping="43.95" armature="2.12" frictionloss="3.56" limited="false" /> -->
             <position forcelimited="true" forcerange="-20 20" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
             <motor    forcelimited="true" forcerange="-38 38" ctrllimited="true" ctrlrange="-1 1" />
         </default>
         <default class="X5">
-            <joint damping="3" armature="0.0503" frictionloss="0.026" limited="false" />
+            <joint damping="3.77" armature="1.29" frictionloss="1.00" limited="false" />
             <position forcelimited="true" forcerange="-2.5 2.5" />
             <velocity ctrllimited="true" ctrlrange="-0.001 0.001" />
             <motor    forcelimited="true" forcerange="-2.5 2.5" ctrllimited="true" ctrlrange="-1 1" />
@@ -169,33 +169,32 @@
         -->
 
         <!-- 24 volts -->
-        <!--
-        <motor class="X8" gear="74.43"  joint="HEBI/base/X8_9"      name="base"/>  
-        <motor class="X8" gear="142.8" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
-        <motor class="X8" gear="74.43"  joint="HEBI/elbow/X8_9"     name="elbow"/>
-x8 gear 20.97
-x8_16   29.88
-
-        <motor class="X8"    gear="18.92" joint="HEBI/base/X8_9"      name="base" />  
-        <motor class="X8_16" gear="37.84" joint="HEBI/shoulder/X8_16" name="shoulder" />
-        <motor class="X8"    gear="18.92" joint="HEBI/elbow/X8_9"     name="elbow" />
-
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
-        <motor class="X5"    gear="3.78"  joint="HEBI/chopstick/X5_1" name="chop" />
--->
-        <motor class="X8"    gear="20" joint="HEBI/base/X8_9"      name="base" />  
-        <motor class="X8_16" gear="38" joint="HEBI/shoulder/X8_16" name="shoulder" />
-        <motor class="X8"    gear="20" joint="HEBI/elbow/X8_9"     name="elbow" />
-
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
-        <motor class="X5"    gear="2.5"  joint="HEBI/chopstick/X5_1" name="chop" />
+        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />  
+        <general class="X8_16" biastype="none" biasprm="38   1.759"  joint="HEBI/shoulder/X8_16" name="shoulder" />
+        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/elbow/X8_9"     name="elbow" />
+        <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
+        <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
+        <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
+        <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/chopstick/X5_1" name="chop" />
 
         <!--
-        <position kp="100" joint="HEBI/base/X8_9"      name="pbase"/>
+             jan 31 sysid
+ 16.92379353181289
+  1.2043148137074795
+  2.5542637753645954
+ 19.617815119852462
+  3.6075824611777754
+ 43.950416819715194
+  2.1193332070923776
+  3.5575999999999994
+ 33.76585528607268
+  3.21243956874129
+  3.770922315541983
+  1.293331596813904
+  1.0025125209675478
+  1.9941218299754653
+ 13.697061082345005
+
         <position kp="100" joint="HEBI/shoulder/X8_16" name="pshoulder"/>
         <position kp="100" joint="HEBI/elbow/X8_9"     name="pelbow"/>
         <position kp="100" joint="HEBI/wrist1/X5_1"    name="pwrist1"/>
