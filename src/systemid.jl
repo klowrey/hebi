@@ -114,9 +114,9 @@ function getHebiModelVars()
     return modelvars, getparams!, setparams!
 end
 
-function sysid(refstate, test::HebiPickup, ctrls; optm=:NM,
+function sysid(refstate, test::HebiPickup, ctrls; optm=:LBFGS,
                batch=1:size(refstate,2),
-               lower=0.001, upper=100.0)
+               lower=0.001, upper=5.0)
     modelvars, getparams!, setparams! = getHebiModelVars()
 
     N = length(modelvars)
@@ -142,6 +142,8 @@ function sysid(refstate, test::HebiPickup, ctrls; optm=:NM,
 
     tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
     Peps = [ zeros(N) for i=1:N+1 ]
+    cache = zeros(N+1)
+
     function optgrad!(storage, P, ep=1e-4)
         for i=1:N
             Peps[i] .= P
@@ -149,7 +151,6 @@ function sysid(refstate, test::HebiPickup, ctrls; optm=:NM,
         end
         Peps[end] .= P
 
-        cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
             tid = Threads.threadid()
             cache[i] = opt(Peps[i], tests[tid])
@@ -169,7 +170,7 @@ function sysid(refstate, test::HebiPickup, ctrls; optm=:NM,
                             iterations=40000, time_limit=60*60)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
-        result = optimize(p->opt(p, test), initP, lower, upper, initP,
+        result = optimize(p->opt(p, test), lower, upper, initP,
                           Fminbox(NelderMead()), options) # probably need custom simplex initializer
         setparams!(test, result.minimizer)#, modelvars)
     elseif optm == :LBFGS
@@ -226,7 +227,7 @@ function getHebiSinCtrl(env::HebiPickup; T=2000)
         d.ctrl[3] = 0.6 + 0.25 * sin(2t)
         d.ctrl[4] = sin(t)
         d.ctrl[5] = 0.1 * sin(2t)
-        d.ctrl[6] = sin(t)
+        #d.ctrl[6] = sin(t)
         d.ctrl[7] = -0.21 + 0.05 * sin(t)
     end
 
@@ -252,16 +253,16 @@ function testSysidOnevar(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=
     # end
     # function getparams!(p::AbstractVector, env)
     #     mp = modelvars(p)
-    #     mp.damping[1] = env.sim.m.dof_damping[2]
-    #     mp.damping[2] = env.sim.m.dof_damping[3]
+    #     mp.damping[1] = env.sim.m.dof_damping[1]
+    #     mp.damping[2] = env.sim.m.dof_damping[2]
     #     env
     # end
-    modelvars, setparams!, getparams! = getHebiModelVars()
+    modelvars, getparams!, setparams! = getHebiModelVars()
 
     initP = allocate(modelvars)
     getparams!(initP, ref)
-    initP .+= 0.01
     clamp!(initP, 0.001, 4.9)
+    setparams!(ref, initP)
     println("Initial params: ", initP)
 
     reset!(ref)
@@ -289,6 +290,7 @@ function testSysidEasy(ref::HebiPickup, test::HebiPickup; ctrls=nothing, optm=:N
     initP = allocate(modelvars)
     getparams!(initP, ref)
     clamp!(initP, 0.001, 4.9)
+    setparams!(ref, initP)
     println("Initial params: ", initP)
 
     reset!(ref)
