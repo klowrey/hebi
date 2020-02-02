@@ -138,13 +138,12 @@ function getparams!(p::AbstractVector, env, varspace)
 end
 
 function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
-                   optm=:NM, batch = 1:size(refstate, 2), horizon=batch[end])
+                   optm=:NM, batch = 1:size(refstate, 2), horizon=length(batch), velscale=1)
     N = length(modelvars)
     osp = obsspace(test)
     s = size(refstate, 1) # length(osp.qpos) + length(osp.qvel) #- 6 # ignore the object's data for now
     println(s)
 
-    #batch = 1500:8000 #1000:6000
     nq = test.sim.m.nq
     nv = test.sim.m.nv
 
@@ -159,9 +158,9 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
         roll = _sysidrollout(env, view(ctrls, :,batch))
 
         #return mse(Y[:,batch], roll.obses[1:s,:]) # from LyceumAI
-        idx = 1:7 #4:6
+        idx = 1:6
         vid = nq .+ idx
-        return mse(Y[idx,batch], roll.obses[idx,:]) + 5*mse(Y[vid,batch], roll.obses[vid,:])
+        return (mse(Y[idx,batch], roll.obses[idx,:]) + velscale*mse(Y[vid,batch], roll.obses[vid,:])) / 2.0
     end
 
     tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
@@ -184,13 +183,6 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
                 cost[i] /= length(threadrange[i])
             end
         end
-        #Threads.@threads for b in batches
-        #for b in batches
-        #    tid = Threads.threadid()
-        #    if length(b) == horizon # only get full batches
-        #        cost[tid] += opt(P, tests[tid], Y, b)
-        #    end
-        #end
         return sum(cost) / length(threadrange) 
     end
 
@@ -205,8 +197,7 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
             tid = Threads.threadid() 
-            #cache[i] = t_opt(Peps[i], tests[tid], nthreads=1)
-            cache[i] = opt(Peps[i], tests[tid])
+            cache[i] = t_opt(Peps[i], tests[tid], nthreads=1)
         end
         storage .= (cache[1:N] .- cache[end]) ./ ep
     end
@@ -226,15 +217,15 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
     options = Optim.Options(allow_f_increases=false,
                             #outer_iterations=20, # fminbox iterations
                             show_trace=true, show_every=10, x_tol=1e-3, g_tol=1e-5,
-                            iterations=40000, time_limit=60*160)
+                            iterations=40000, time_limit=60*660)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
         result = optimize(t_opt, lower, upper, initP, Fminbox(NelderMead()), options) # probably need custom simplex initializer
         setparams!(test, result.minimizer, modelvars)
     elseif optm == :LBFGS
         #result = optimize(opt, lower, upper, initP, Fminbox(LBFGS()), options)
-        #result = optimize(t_opt, optgrad!,
-        result = optimize(opt, optgrad!,
+        result = optimize(t_opt, optgrad!,
+        #result = optimize(opt, optgrad!,
                           lower, upper, initP,
                           Fminbox(LBFGS(alphaguess = LineSearches.InitialQuadratic(),
                                         linesearch = LineSearches.BackTracking())),

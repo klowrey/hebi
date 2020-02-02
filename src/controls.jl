@@ -53,6 +53,7 @@ end
 function jacctrl(env::HebiPickup)
     jacp = zeros(env.sim.m.nv, 3)
     jacr = zeros(env.sim.m.nv, 3)
+    ctrl = zeros(env.sim.m.nu)
 
     function ctrlfn(env)
         m, d = env.sim.m, env.sim.d
@@ -61,11 +62,17 @@ function jacctrl(env::HebiPickup)
         # have the object as the target site
         delta = SPoint3D(d.geom_xpos, m.ngeom) - SPoint3D(d.site_xpos, 1)
 
-        #d.ctrl[1:7] .= jacp[:,1:7]' * delta
-        d.ctrl[1:7] .= 15.0 .* jacp[1:7, :] * delta
-        d.ctrl[9]  = 1.0   # when using position control
-        d.ctrl[10] = 1.0
-        d.ctrl[14] = -0.21
+        ctrl .= 150.0 .* jacp[1:7, :] * delta
+        #display(ctrl)
+
+        setaction!(env, ctrl)
+
+        display(d.ctrl)
+        forward!(env.sim)
+
+        #d.ctrl[9]  = 1.0   # when using position control
+        #d.ctrl[10] = 1.0
+        #d.ctrl[14] = -0.21
     end
     visualize(env, controller=ctrlfn)
 end
