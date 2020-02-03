@@ -50,24 +50,30 @@ function sinctrl(env::HebiPickup)
     visualize(env, controller=sinfn)
 end
 
-function jacctrl(env::HebiPickup)
+function jacctrl(env::HebiPickup, gain=100.0)
     jacp = zeros(env.sim.m.nv, 3)
+    jac  = zeros(env.sim.m.nu, 3)
     jacr = zeros(env.sim.m.nv, 3)
     ctrl = zeros(env.sim.m.nu)
+    copyidx = CartesianIndices((env.sim.m.nu,3))
 
     function ctrlfn(env)
         m, d = env.sim.m, env.sim.d
         MuJoCo.MJCore.mj_jacSite(m, d, vec(jacp), vec(jacr), 0) # not 1-based indexing??
+        #MuJoCo.MJCore.mj_jacBodyCom(m, d, vec(jacp), vec(jacr), 8) # not 1-based indexing??
+        #display(jacr)
+        #copyto!(jac, copyidx, jacp, copyidx) # jac .= jac[1:mu, :] # err not working?
 
-        # have the object as the target site
-        delta = SPoint3D(d.geom_xpos, m.ngeom) - SPoint3D(d.site_xpos, 1)
+        # have the object as the target site through it's body_xpos
+        positiondelta = gain .* (SPoint3D(d.xpos, m.nbody) - SPoint3D(d.site_xpos, 1))
 
-        ctrl .= 150.0 .* jacp[1:7, :] * delta
+        # already transposed as mujoco is row-major; julia is col-major
+        ctrl .= jacp[1:7,:] * positiondelta
+        clamp!(ctrl, -1.0, 1.0)
         #display(ctrl)
 
         setaction!(env, ctrl)
 
-        display(d.ctrl)
         forward!(env.sim)
 
         #d.ctrl[9]  = 1.0   # when using position control

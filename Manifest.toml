@@ -32,9 +32,9 @@ version = "3.5.0+2"
 
 [[ArrayInterface]]
 deps = ["LinearAlgebra", "Requires", "SparseArrays"]
-git-tree-sha1 = "656fd4bcdf204ea96945d9bc1068c0056013438a"
+git-tree-sha1 = "4f1109cf20b2a31b5196f346bba07b2c61587442"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "2.3.1"
+version = "2.4.1"
 
 [[AxisArrays]]
 deps = ["Dates", "IntervalSets", "IterTools", "RangeArrays"]
@@ -86,9 +86,9 @@ version = "1.0.0"
 
 [[CSV]]
 deps = ["CategoricalArrays", "DataFrames", "Dates", "FilePathsBase", "Mmap", "Parsers", "PooledArrays", "Tables", "Unicode", "WeakRefStrings"]
-git-tree-sha1 = "027b8d04a1983153ecbcf8f905e926bf01c078e8"
+git-tree-sha1 = "fe9b828d5e7b55431d75d6d180ef843d69dea048"
 uuid = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-version = "0.5.22"
+version = "0.5.23"
 
 [[CUDAapi]]
 deps = ["Libdl", "Logging"]
@@ -148,12 +148,6 @@ version = "3.2.0"
 git-tree-sha1 = "a2a6a5fea4d6f730ec4c18a76d27ec10e8ec1c50"
 uuid = "187b0558-2788-49d3-abe0-74a17ed4e7c9"
 version = "1.0.0"
-
-[[CpuId]]
-deps = ["Markdown", "Test"]
-git-tree-sha1 = "f0464e499ab9973b43c20f8216d088b61fda80c6"
-uuid = "adafc99b-e345-5852-983c-f28acb93d879"
-version = "0.2.2"
 
 [[CuArrays]]
 deps = ["AbstractFFTs", "Adapt", "CEnum", "CUDAapi", "CUDAdrv", "CUDAnative", "DataStructures", "GPUArrays", "Libdl", "LinearAlgebra", "MacroTools", "NNlib", "Printf", "Random", "Requires", "SparseArrays", "TimerOutputs"]
@@ -215,9 +209,9 @@ uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 
 [[Distributions]]
 deps = ["FillArrays", "LinearAlgebra", "PDMats", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns"]
-git-tree-sha1 = "71a3f1ae1fca9ed876edfbc2079d7b7c27e2e3d5"
+git-tree-sha1 = "6b19601c0e98de3a8964ed33ad73e130c7165b1d"
 uuid = "31c24e10-a181-5473-b8eb-7969acd0382f"
-version = "0.22.3"
+version = "0.22.4"
 
 [[DocStringExtensions]]
 deps = ["LibGit2", "Markdown", "Pkg", "Test"]
@@ -454,23 +448,17 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
-[[LoopVectorization]]
-deps = ["LinearAlgebra", "MacroTools", "Parameters", "SIMDPirates", "SLEEFPirates", "VectorizationBase"]
-git-tree-sha1 = "38fb85a88de2d0f10e54bf6e6fd8eb60d44378a4"
-uuid = "bdcacae8-1622-11e9-2a5c-532679323890"
-version = "0.6.3"
-
 [[Lyceum]]
 deps = ["LyceumAI", "LyceumBase", "LyceumMuJoCo", "LyceumMuJoCoViz", "MuJoCo", "Pkg", "Reexport", "Shapes", "UniversalLogger"]
-git-tree-sha1 = "9c003633719df48f313b773f28b3af27a2b7fcc1"
+git-tree-sha1 = "35d75cb9627dac4a3331765d23953c223aa86e3d"
 uuid = "f25b5985-59c0-418b-a573-42c079f3f644"
-version = "0.2.0"
+version = "0.3.0"
 
 [[LyceumAI]]
 deps = ["Base64", "Distances", "DocStringExtensions", "EllipsisNotation", "FastClosures", "Flux", "Future", "IterativeSolvers", "LearnBase", "LinearAlgebra", "LyceumBase", "LyceumMuJoCo", "MLDataPattern", "MacroTools", "MuJoCo", "MuJoCo_jll", "Parameters", "Random", "Shapes", "StaticArrays", "Statistics", "UniversalLogger", "UnsafeArrays", "Zygote"]
-git-tree-sha1 = "d4011028f54dfe0a839ed037eb912c529f14c5b3"
+git-tree-sha1 = "d4748724dbc22a4b7fbc04df92bb6f9090750347"
 uuid = "6917c76a-ac01-4302-a33e-8c456ab70f71"
-version = "0.2.0"
+version = "0.2.1"
 
 [[LyceumBase]]
 deps = ["Adapt", "BenchmarkTools", "Dates", "Distributions", "ElasticArrays", "EllipsisNotation", "Future", "InteractiveUtils", "JLSO", "LibGit2", "LinearAlgebra", "Logging", "MacroTools", "Parameters", "Pkg", "Random", "Shapes", "StaticArrays", "Statistics", "Test", "TimeZones", "UnicodePlots", "UniversalLogger", "UnsafeArrays"]
@@ -480,15 +468,15 @@ version = "0.2.0"
 
 [[LyceumMuJoCo]]
 deps = ["Distances", "Distributions", "DocStringExtensions", "LinearAlgebra", "LyceumBase", "MuJoCo", "Random", "Reexport", "Shapes", "StaticArrays", "Statistics", "UnsafeArrays"]
-git-tree-sha1 = "e6c86deee222f7c20309f1caf69a633b1c4cd4c6"
+git-tree-sha1 = "4138207cd721d925142604fa83dc012b22bdb5e9"
 uuid = "48b9757e-04b8-4dbf-b6ed-75c13d9e4026"
-version = "0.2.0"
+version = "0.2.1"
 
 [[LyceumMuJoCoViz]]
 deps = ["BangBang", "DocStringExtensions", "FFMPEG", "GLFW", "LyceumBase", "LyceumMuJoCo", "MuJoCo", "Observables", "Printf", "Shapes", "StaticArrays"]
-git-tree-sha1 = "26901122cc3d3036dec73e6d5a13036f3cb880e3"
+git-tree-sha1 = "fa19e2e0cc00db604cb3f954b1af07e7d1fa8464"
 uuid = "409fd311-7925-44f6-a514-6be572b34fdd"
-version = "0.2.1"
+version = "0.2.3"
 
 [[MKL_jll]]
 deps = ["IntelOpenMP_jll", "Libdl", "Pkg"]
@@ -552,9 +540,9 @@ version = "0.7.1"
 
 [[MuJoCo]]
 deps = ["AxisArrays", "BangBang", "Base64", "CEnum", "LinearAlgebra", "MacroTools", "MuJoCo_jll", "Reexport", "StaticArrays", "UnsafeArrays"]
-git-tree-sha1 = "632b464252c88aa4862a38f56620c1baa5a9ece4"
+git-tree-sha1 = "cacfbec55ae951693a9043e4fc1df825e8964f3e"
 uuid = "93189219-7048-461c-94ec-443a161ed927"
-version = "0.2.0"
+version = "0.3.0"
 
 [[MuJoCo_jll]]
 deps = ["GLEW_jll", "GLFW_jll", "Libdl", "Libglvnd_jll", "Pkg"]
@@ -598,10 +586,10 @@ uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.3+1"
 
 [[Optim]]
-deps = ["FillArrays", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "Random", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "b1e90642d0addb7d9651d409ad465ac5c764c11f"
+deps = ["FillArrays", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
+git-tree-sha1 = "08f170ff0dcf07f4edb567020fcab47f415da207"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "0.20.0"
+version = "0.20.1"
 
 [[OrderedCollections]]
 deps = ["Random", "Serialization", "Test"]
@@ -700,18 +688,6 @@ version = "0.6.0"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
-
-[[SIMDPirates]]
-deps = ["MacroTools", "VectorizationBase"]
-git-tree-sha1 = "5d8212a28fd747bb5f77fe8b8f8d21b4024548d3"
-uuid = "21efa798-c60a-11e8-04d3-e1a92915a26a"
-version = "0.3.2"
-
-[[SLEEFPirates]]
-deps = ["SIMDPirates", "VectorizationBase"]
-git-tree-sha1 = "740604e0e5bb739488da2c2c25b5f3d71517a490"
-uuid = "476501e8-09a2-5ece-8869-fb82de89a1fa"
-version = "0.3.1"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
@@ -851,12 +827,6 @@ version = "0.2.0"
 git-tree-sha1 = "1de6ef280110c7ad3c5d2f7a31a360b57a1bde21"
 uuid = "c4a57d5a-5b31-53a6-b365-19f8c011fbd6"
 version = "1.0.0"
-
-[[VectorizationBase]]
-deps = ["CpuId", "LinearAlgebra"]
-git-tree-sha1 = "4c587c04a6daa03370023e8ea4c431fcae5f7371"
-uuid = "3d5dd08c-fd9d-11e8-17fa-ed2836048c2f"
-version = "0.2.4"
 
 [[WeakRefStrings]]
 deps = ["DataAPI", "Random", "Test"]

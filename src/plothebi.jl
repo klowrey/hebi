@@ -34,16 +34,16 @@ function plotx8(env, pos, vel, act, r=1:size(pos,2), pr=1:3)
    for i=pr
       display(lineplot!(
                         lineplot(npos[i,:], xlim=(0,length(r)), 
-                                 width=80, height=7, name="m"),
-                        pos[i,r], name="r"))
+                                 width=80, height=7, name="est"),
+                        pos[i,r], name="real"))
    end
    println("Vels")
    println(mse(vel[pr,r], nvel[pr,:]))
    for i=pr
       display(lineplot!(
                         lineplot(nvel[i,:], xlim=(0,length(r)), 
-                                 width=80, height=7, name="m"),
-                        vel[i,r], name="r"))
+                                 width=80, height=7, name="est"),
+                        vel[i,r], name="real"))
    end
 end
 

@@ -5,6 +5,7 @@ using UniversalLogger
 using Base: @propagate_inbounds
 using Random
 import LyceumBase: tconstruct, _rollout
+using LyceumMuJoCo: fastreset_nofwd!
 using Statistics, StaticArrays, UnsafeArrays
 using Base.Iterators
 using Distributions, Distances
@@ -146,16 +147,21 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
 
     nq = test.sim.m.nq
     nv = test.sim.m.nv
+    tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
+    shared = tconstruct(HebiPickup, Threads.nthreads()) # shared model for parallel rollouts
 
     function opt(P, env=test, Y=refstate, batch=batch)
         setparams!(env, P, modelvars)
 
-        reset!(env)
-        env.sim.d.qpos .= view(Y, 1:7,  batch[1])
-        env.sim.d.qvel .= view(Y, 8:14, batch[1])
-        env.sim.d.ctrl .= view(ctrls,:, batch[1])
+        #fastreset_nofwd!(env)
+        
+        @uviews Y ctrls begin
+            env.sim.d.qpos .= view(Y, 1:7,  batch[1])
+            env.sim.d.qvel .= view(Y, 8:14, batch[1])
+            env.sim.d.ctrl .= view(ctrls,:, batch[1])
+        end
         forward!(env.sim)
-        roll = _sysidrollout(env, view(ctrls, :,batch))
+        roll = _sysidrollout(tests[Threads.threadid()], view(ctrls, :,batch))
 
         #return mse(Y[:,batch], roll.obses[1:s,:]) # from LyceumAI
         idx = 1:6
@@ -163,27 +169,26 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
         return (mse(Y[idx,batch], roll.obses[idx,:]) + velscale*mse(Y[vid,batch], roll.obses[vid,:])) / 2.0
     end
 
-    tests = [ HebiPickup() for _=1:Threads.nthreads() ] # independent models for parallel eval
-    shared = tconstruct(HebiPickup, Threads.nthreads()) # shared model for parallel rollouts
     function t_opt(P, env=test, Y=refstate; batch=batch, horizon=horizon, nthreads=Threads.nthreads())
 
         batches = collect(partition(batch, horizon))
         length(batches[end]) < length(batches[1]) && pop!(batches)
         nbatch = length(batches)
 
-        threadrange = collect(partition(1:nbatch, max(1,div(nbatch, nthreads))))
-        
-        cost = zeros(nthreads)
-        @sync for i=1:min(length(threadrange), nthreads)
+        trange = collect(partition(1:nbatch, max(1,div(nbatch, nthreads))))
+        ti = length(trange)
+
+        cost = zeros(ti)
+        @sync for i=1:ti
             Threads.@spawn begin
                 tid = Threads.threadid() 
-                for b in batches[threadrange[i]]
+                for b in batches[trange[i]]
                     cost[i] += opt(P, tests[tid], Y, b)
                 end
-                cost[i] /= length(threadrange[i])
+                cost[i] /= length(trange[i])
             end
         end
-        return sum(cost) / length(threadrange) 
+        return sum(cost) / length(trange) 
     end
 
     Peps = [ zeros(N) for i=1:N+1 ]
@@ -217,7 +222,7 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
     options = Optim.Options(allow_f_increases=false,
                             #outer_iterations=20, # fminbox iterations
                             show_trace=true, show_every=10, x_tol=1e-3, g_tol=1e-5,
-                            iterations=40000, time_limit=60*660)
+                            iterations=10000, time_limit=60*660)
     if optm == :NM
         #result = optimize(opt, initP, NelderMead(; initial_simplex=MySimplexer{T}(xmax, 0.0)), options)
         result = optimize(t_opt, lower, upper, initP, Fminbox(NelderMead()), options) # probably need custom simplex initializer
@@ -232,8 +237,8 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
                           options)
         setparams!(test, result.minimizer, modelvars)
     elseif optm == :PS
-        @warn "optimizer $optm not configured yet."
-        result = optimize(opt, initP,
+        #@warn "optimizer $optm not configured yet."
+        result = optimize(x->t_opt(x; nthreads=1), initP,
                           ParticleSwarm(lower=lower, upper=upper, n_particles=18), options) # doesn't work?
     elseif optm == :BBO
         # probably needs much more parallel evals to be useful

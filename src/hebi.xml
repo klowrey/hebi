@@ -127,10 +127,10 @@
         </body>
  -->
         <!--
+                 <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>
         <body name="mybox_body" pos="0.6 0.1 0.03">
           <joint name="mybox_joint" type="free" damping="0.0" />
           <geom size="0.01 0.01 0.01" type="box" name="mybox" material="block_mat" mass="0.01" contype="1" conaffinity="1" />
-                 <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>
         </body>
         -->
 
@@ -160,18 +160,8 @@
         -->
     </contact>
     <actuator>
-        <!-- 36 volts
-        <motor class="X8" gear="111.65"  joint="HEBI/base/X8_9"      name="base"/>  
-        <motor class="X8" gear="214.19" joint="HEBI/shoulder/X8_16" name="shoulder" forcerange="-16 16" />
-        <motor class="X8" gear="111.65"  joint="HEBI/elbow/X8_9"     name="elbow"/>
 
-        <motor class="X5" gear="39.88" joint="HEBI/wrist1/X5_1"    name="wrist1"/>
-        <motor class="X5" gear="39.88" joint="HEBI/wrist2/X5_1"    name="wrist2"/>
-        <motor class="X5" gear="39.88" joint="HEBI/wrist3/X5_1"    name="wrist3"/>
-        <motor class="X5" gear="39.88" joint="HEBI/chopstick/X5_1" name="chop"/>
-        -->
-
-        <!-- 24 volts 
+        <!-- 24 volts from spec sheet
         <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />  
         <general class="X8_16" biastype="none" biasprm="38   1.759"  joint="HEBI/shoulder/X8_16" name="shoulder" />
         <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/elbow/X8_9"     name="elbow" />
@@ -179,7 +169,8 @@
         <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist2/X5_1"    name="wrist2" />
         <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist3/X5_1"    name="wrist3" />
         <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/chopstick/X5_1" name="chop" />
--->
+        -->
+
         <!-- 24 volts from data -->
         <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/base/X8_9"      name="base" />  
         <general class="X8_16" biastype="none" biasprm="41.80 1.934"  joint="HEBI/shoulder/X8_16" name="shoulder" />
@@ -208,21 +199,21 @@
  13.697061082345005
 
 feb 2 sysid
- 16.681530446394156
-  1.6597882706051517
-  1.38111115501939
- 22.126541448434075
-  3.520579294800425
- 43.650676176856415
-  2.0947197163491627
-  1.960296089050649
- 42.20475764524212
-  1.0401916341470512
-  2.6600507347369593
-  1.1402784216293969
-  2.2666051273209558
-  3.4783780183955346
- 15.481235243848108
+ 16.565894717218143
+  0.8298941353025776
+  0.72516891289985
+ 22.308247334061544
+  3.4545294102227038
+ 43.6406290078647
+  1.9720170486805562
+  1.9182305471627894
+ 42.206321491581164
+  1.0168466953682722
+  2.8353500311417172
+  0.5702788395272474
+  2.2921171037829
+  3.516827535367658
+ 15.481040063100988
 
         <position kp="100" joint="HEBI/shoulder/X8_16" name="pshoulder"/>
         <position kp="100" joint="HEBI/elbow/X8_9"     name="pelbow"/>
