@@ -1,3 +1,5 @@
+using StaticArrays, Rotations
+
 
 function hebiMPPI(etype = HebiPickup; T = 100, H = 32, K = 24, lambda=0.5)
     env = etype()
@@ -50,7 +52,7 @@ function sinctrl(env::HebiPickup)
     visualize(env, controller=sinfn)
 end
 
-function jacctrl(env::HebiPickup, gain=100.0)
+function jacctrl(env::HebiPickup, gain=150.0)
     jacp = zeros(env.sim.m.nv, 3)
     jac  = zeros(env.sim.m.nu, 3)
     jacr = zeros(env.sim.m.nv, 3)
@@ -65,10 +67,24 @@ function jacctrl(env::HebiPickup, gain=100.0)
         #copyto!(jac, copyidx, jacp, copyidx) # jac .= jac[1:mu, :] # err not working?
 
         # have the object as the target site through it's body_xpos
-        positiondelta = gain .* (SPoint3D(d.xpos, m.nbody) - SPoint3D(d.site_xpos, 1))
+        positiondelta = (SPoint3D(d.geom_xpos, m.ngeom) - SPoint3D(d.site_xpos, 1))
+
+        target_orientation = reshape(d.geom_xmat[1:9, m.ngeom], (3,3))
+        ee_orientation = reshape(d.site_xmat[1:9, 1], (3,3))
+        t_r = Quat(target_orientation)
+        e_r = Quat(ee_orientation)
+        diff = RotXYZ(t_r / e_r)
+        diff_v = SVector(diff.theta1, diff.theta2, diff.theta3)
+        #diff_orientation = target_orientation * transpose(ee_orientation)
+        #angles =
+
+        #orientationdelta = ()
 
         # already transposed as mujoco is row-major; julia is col-major
-        ctrl .= jacp[1:7,:] * positiondelta
+        #ctrl .= gain .* jacp[1:7,:] * positiondelta
+        #display(jacr[1:7, :])
+        #display(diff_v)
+        ctrl .= gain .* jacr[1:7,:] * diff_v + gain .* jacp[1:7, :] * positiondelta
         clamp!(ctrl, -1.0, 1.0)
         #display(ctrl)
 

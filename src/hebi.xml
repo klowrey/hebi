@@ -60,9 +60,9 @@
         <!-- Arm -->
         <geom type="mesh" material="motor" mesh="X8" contype="0" conaffinity="0" />
         <!-- primitive contact geomotery
-        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" /> 
+        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" />
+        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" />
+        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" />
         -->
         <body name="shoulder_bracket" pos="0 0 0.045">
             <inertial pos="-0.0101399 -0.048785 0.0445629" quat="0.720398 0.150702 -0.477883 0.479525" mass="0.715" diaginertia="0.00110899 0.00102189 0.000683866" />
@@ -127,12 +127,11 @@
         </body>
  -->
         <!--
-                 <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>
+                 <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>-->
         <body name="mybox_body" pos="0.6 0.1 0.03">
           <joint name="mybox_joint" type="free" damping="0.0" />
           <geom size="0.01 0.01 0.01" type="box" name="mybox" material="block_mat" mass="0.01" contype="1" conaffinity="1" />
         </body>
-        -->
 
         <!-- foam
         <body name="myfoam" pos="0.45 -0.02 0.5">
@@ -162,7 +161,7 @@
     <actuator>
 
         <!-- 24 volts from spec sheet
-        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />  
+        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />
         <general class="X8_16" biastype="none" biasprm="38   1.759"  joint="HEBI/shoulder/X8_16" name="shoulder" />
         <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/elbow/X8_9"     name="elbow" />
         <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
@@ -172,7 +171,7 @@
         -->
 
         <!-- 24 volts from data -->
-        <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/base/X8_9"      name="base" />  
+        <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/base/X8_9"      name="base" />
         <general class="X8_16" biastype="none" biasprm="41.80 1.934"  joint="HEBI/shoulder/X8_16" name="shoulder" />
         <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/elbow/X8_9"     name="elbow" />
         <general class="X5"    biastype="none" biasprm="2.98 15.481"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
@@ -235,7 +234,7 @@ feb 2 sysid
 
     <!--
     <keyframe>
-      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/> 
+      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/>
     </keyframe>
 -->
 </mujoco>
