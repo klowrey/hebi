@@ -75,7 +75,7 @@ function viz_mppi(mppi::MPPI, env::HebiPickup)
     a = allocate(actionspace(env))
     o = allocate(obsspace(env))
     s = allocate(statespace(env))
-    function ctrlfn(env) 
+    function ctrlfn(env)
         getstate!(s, env)
         getaction!(a, s, o, mppi)
         setaction!(env, a)
@@ -84,3 +84,18 @@ function viz_mppi(mppi::MPPI, env::HebiPickup)
 end
 
 
+function clampnorm!(A, maxnorm::Real, p::Real = 2)
+    Anorm = norm(A, p)
+    if Anorm > maxnorm
+        A .= maxnorm .* A ./ Anorm
+    end
+    A
+end
+
+function clampmaxabs!(A, maxnorm::Real)
+    Anorm = maximum(abs, A)
+    if Anorm > maxnorm
+        A .= maxnorm .* A ./ Anorm
+    end
+    A
+end

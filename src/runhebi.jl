@@ -10,7 +10,15 @@ using Statistics, StaticArrays, UnsafeArrays
 using Base.Iterators
 using Distributions, Distances
 using MuJoCo
+using Parameters
+using FastClosures
+using Rotations
+using NLsolve
+using LeastSquaresOptim
 
+const AbsMat = AbstractMatrix
+const AbsVec = AbstractVector
+using Printf
 using CSV
 
 using Optim
@@ -22,8 +30,9 @@ using SharedArrays
 
 include("hebi.jl")
 include("util.jl")
+include("vizmodes.jl")
 include("controls.jl")
-
+include("jacobianmethods.jl")
 
 
 
@@ -52,7 +61,7 @@ function datafile(s="example.csv", nv=7, skip=4)
         act[:, i] .= tryparse.(Float64, split(d.pwmCommands[i]))
         eff[:, i] .= tryparse.(Float64, split(d.efforts[i]))
     end
-    
+
     println(r)
     dt = (d.timestamp_us .- d.timestamp_us[1]) * 1e-6
 
@@ -64,7 +73,7 @@ function datafile(s="example.csv", nv=7, skip=4)
         return dt, pos[:,2:skip:end], vel[:,2:skip:end], act[:,2:skip:end], eff[:,2:skip:end]
     else
         println("Average dt, raw: ", mean(diff(dt)))
-        return dt, pos, vel, act, eff 
+        return dt, pos, vel, act, eff
     end
 end
 
@@ -154,7 +163,7 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
         setparams!(env, P, modelvars)
 
         #fastreset_nofwd!(env)
-        
+
         @uviews Y ctrls begin
             env.sim.d.qpos .= view(Y, 1:7,  batch[1])
             env.sim.d.qvel .= view(Y, 8:14, batch[1])
@@ -181,27 +190,27 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
         cost = zeros(ti)
         @sync for i=1:ti
             Threads.@spawn begin
-                tid = Threads.threadid() 
+                tid = Threads.threadid()
                 for b in batches[trange[i]]
                     cost[i] += opt(P, tests[tid], Y, b)
                 end
                 cost[i] /= length(trange[i])
             end
         end
-        return sum(cost) / length(trange) 
+        return sum(cost) / length(trange)
     end
 
     Peps = [ zeros(N) for i=1:N+1 ]
     function optgrad!(storage, P, ep=1e-3)
         for i=1:N
             Peps[i] .= P
-            Peps[i][i] += ep 
+            Peps[i][i] += ep
         end
         Peps[end] .= P
 
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
-            tid = Threads.threadid() 
+            tid = Threads.threadid()
             cache[i] = t_opt(Peps[i], tests[tid], nthreads=1)
         end
         storage .= (cache[1:N] .- cache[end]) ./ ep
@@ -243,7 +252,7 @@ function filesysid(refstate, test::HebiPickup, ctrls, modelvars=gethebivars();
     elseif optm == :BBO
         # probably needs much more parallel evals to be useful
         nworkers() == 1 && addprocs(Threads.nthreads())
-        @info "using $(nworkers()) worker processes" 
+        @info "using $(nworkers()) worker processes"
         #sa = SharedArray{HebiPickup}(nworkers())
         #@everywhere popt(p) = opt(p, HebiPickup())
         bbopt = bbsetup(p->opt(p, test); Method=:xnes, SearchRange = (0.0001, 5.0),
@@ -285,7 +294,7 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     end
     function getparams!(p::AbstractVector, env)
         mp = modelvars(p)
-        mp.x8_damping      = env.sim.m.dof_damping[1]      / scalingfactor[1] 
+        mp.x8_damping      = env.sim.m.dof_damping[1]      / scalingfactor[1]
         mp.x5_damping      = env.sim.m.dof_damping[4]      / scalingfactor[2]
         mp.x8_armature     = env.sim.m.dof_armature[1]     / scalingfactor[3]
         mp.x5_armature     = env.sim.m.dof_armature[4]     / scalingfactor[4]
@@ -311,15 +320,15 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     function optgrad!(storage, P, ep=1e-4)
         for i=1:N
             Peps[i] .= P
-            Peps[i][i] += ep 
+            Peps[i][i] += ep
         end
         Peps[end] .= P
 
         #z = opt(P, test)
-        
+
         cache = zeros(N+1)
         Threads.@threads for i=1:(N+1)
-            tid = Threads.threadid() 
+            tid = Threads.threadid()
             cache[i] = opt(Peps[i], tests[tid])
         end
         storage .= (cache[1:N] .- cache[end]) ./ ep
@@ -356,7 +365,7 @@ function testsysid(ref::HebiPickup, test::HebiPickup, ctrls; optm=:NM)
     elseif optm == :BBO
         # probably needs much more parallel evals to be useful
         nworkers() == 1 && addprocs(Threads.nthreads())
-        @info "using $(nworkers()) worker processes" 
+        @info "using $(nworkers()) worker processes"
         #sa = SharedArray{HebiPickup}(nworkers())
         #@everywhere popt(p) = opt(p, HebiPickup())
         bbopt = bbsetup(p->opt(p, test); Method=:xnes, SearchRange = (0.0001, 5.0),

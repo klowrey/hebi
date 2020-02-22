@@ -18,6 +18,8 @@ struct HebiPickup{S<:MJSim, O} <: AbstractMuJoCoEnvironment
                          d_goal = ScalarShape(Float64),
                          cs2obj  = VectorShape(Float64, 3), # chopsticks to object
                          obj2goal = VectorShape(Float64, 3), # object to goal
+                         dp = VectorShape(Float64, 3),
+                         dr = VectorShape(Float64, 3)
                         )
 
         #my_warning_cb(msg::Cstring) = (@warn unsafe_string(msg); nothing)
@@ -34,7 +36,7 @@ end
 
 function tconstruct(::Type{HebiPickup}, n::Integer)
     modelpath = joinpath(@__DIR__, "hebi.xml")
-    return Tuple(HebiPickup(s) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip = 2))
+    return Tuple(HebiPickup(s) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip = 5))
 end
 HebiPickup() = first(tconstruct(HebiPickup, 1))
 
@@ -52,7 +54,9 @@ end
 
 @propagate_inbounds function LyceumMuJoCo.reset!(env::HebiPickup)
     fastreset_nofwd!(env.sim)
-    #keypos_position(env.sim) # when using position control
+    env.sim.dn.qpos[Symbol("HEBI/shoulder/X8_16")] = pi/4
+    env.sim.dn.qpos[Symbol("HEBI/elbow/X8_9")] = pi/4
+    ##keypos_position(env.sim) # when using position control
     forward!(env.sim)
     env
 end
@@ -103,6 +107,12 @@ end
     _obj  = SPoint3D(d.geom_xpos, obj)
     _cpsk = SPoint3D(d.site_xpos, 1)
 
+
+    dn = env.sim.dn
+    dp = dn.xpos[:, :target] - dn.site_xpos[:, :chopstick]
+    r_target = RotMatrix(dn.site_xmat[:, :target]...)
+    r_chopstick = RotMatrix(dn.site_xmat[:, :chopstick]...)
+
     @uviews obs @inbounds begin
         o = obsspace(env)(obs)
         #o.qpos .= view(qpos, 1:(m.nq-7)) ## TODO OBJECT
@@ -115,6 +125,7 @@ end
         o.d_goal = _sitedist(_obj, env.goal, dmin)
         o.cs2obj .= _obj - _cpsk
         o.obj2goal .= _obj - env.goal
+        o.dp .= dp
     end
     obs
 end
@@ -133,16 +144,23 @@ end
 end
 
 @propagate_inbounds function LyceumMuJoCo.getreward(state, action, obs, env::HebiPickup)
-    o = obsspace(env)(obs)
-    
-    _cs2obj = o.d_obj / 0.5
-    _obj2goal = o.d_goal / 0.5
+    #o = obsspace(env)(obs)
 
-    reward = -_cs2obj
-    if _cs2obj < 0.006
-        reward = 2.0 - 2 * _obj2goal 
-    end
-    reward
+    #_cs2obj = o.d_obj / 0.5
+    #_obj2goal = o.d_goal / 0.5
+
+    #reward = -_cs2obj
+    #if _cs2obj < 0.006
+    #    reward = 2.0 - 2 * _obj2goal
+    #end
+    #reward
+    dn = env.sim.dn
+    dp = dn.xpos[:, :target] - dn.site_xpos[:, :chopstick]
+    r_target = RotMatrix(dn.site_xmat[:, :target]...)
+    r_chopstick = RotMatrix(dn.site_xmat[:, :chopstick]...)
+
+    return 0
+    #return -norm(dp) #- norm(dr)
 end
 
 @propagate_inbounds function LyceumMuJoCo.geteval(state, action, obs, env::HebiPickup)

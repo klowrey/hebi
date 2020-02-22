@@ -1,4 +1,5 @@
 <mujoco model="hebi">
+
   <compiler angle="radian" meshdir="meshes/" />
     <size njmax="500" nconmax="100" />
     <asset>
@@ -52,7 +53,7 @@
     </default>
     <worldbody>
         <!-- Arena -->
-        <geom name="ground" pos="0 0 0" rgba="0.9 0.9 0.9 1" size="1 1 10" type="plane" material="table_mat" contype="0" conaffinity="1" />
+        <geom name="ground" pos="0 0 0" rgba="0.9 0.9 0.9 1" size="1 1 10" type="plane" material="table_mat" />
 
         <!-- Base table -->
         <!-- <geom size="0.125 0.25 0.0254" pos="-0.125 0 -0.0254" type="box" rgba="0.6 0.6 0.6 1" /> -->
@@ -60,9 +61,9 @@
         <!-- Arm -->
         <geom type="mesh" material="motor" mesh="X8" contype="0" conaffinity="0" />
         <!-- primitive contact geomotery
-        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" /> 
-        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" /> 
+        <geom class="contact" type="cylinder" size="0.0365 0.022" pos="0 0 0.022" />
+        <geom class="contact" type="cylinder" size="0.0165 0.022" pos="-0.03 0.02 0.022" />
+        <geom class="contact" type="cylinder" size="0.017 0.022"  pos="-0.055 -0.016 0.022" />
         -->
         <body name="shoulder_bracket" pos="0 0 0.045">
             <inertial pos="-0.0101399 -0.048785 0.0445629" quat="0.720398 0.150702 -0.477883 0.479525" mass="0.715" diaginertia="0.00110899 0.00102189 0.000683866" />
@@ -100,7 +101,7 @@
                                 <geom quat="0.5 0.5 0.5 0.5" type="mesh" rgba="0.96 0.945 0.871 1" mesh="PM-2132-01L" />
                                 <geom pos="0 0.043 0.04" quat="0.707107 -0.707107 0 0" type="mesh" material="motor" mesh="X5" />
                                 <geom name="stick" pos="0.0015 0.079024 0.06325" quat="0.707107 -0.707107 0 0" type="mesh" rgba="0.96 0.945 0.871 1" mesh="chopstick" />
-                                <!-- Consider replace the chopstick mesh with ellipsoid to help Mujoco convex solver -->
+                                <!-- TODO Consider replace the chopstick mesh with ellipsoid to help Mujoco convex solver -->
                                 <geom pos="-0.05 0.079024 0.06775" quat="0.707107 -0.707107 0 0" type="mesh" rgba="0.1 0.1 0.1 1" mesh="chopstick_mount_m3" />
                                 <geom pos="0.015 0.079024 0.06775" quat="0.707107 -0.707107 0 0" type="mesh" rgba="0.1 0.1 0.1 1" mesh="chopstick_mount_m3" />
                                 <site name="chopstick" pos="0.11 0.078 0.055" type="sphere" size="0.005" rgba="0.1 0.1 0.1 0.5" />
@@ -120,12 +121,21 @@
 
         <!-- ball -->
         <!--not so sure about damping -->
-        <!--
-        <body name="myball" pos="0.45 -0.05 0.01" >
-            <joint name="myball_joint" type="free" damping="0.01"></joint>
-            <geom rgba="0.9 0.2 0.2 1" type="sphere" size="0.008 0.008 0.008" density="300" contype="1" conaffinity="0"/>
+
+        <!-- <body name="myball" pos="0.45 -0.05 0.01" >
+            <joint name="myball_joint" type="free" damping="0"></joint>
+            <geom rgba="0.9 0.2 0.2 1" type="sphere" size="0.008 0.008 0.008" mass="0.0001" contype="1" conaffinity="0"/>
+        </body> -->
+        <body name="target" pos="0.7 0.03 0.13" xyaxes="1 0 0 0 0 -1" mocap="true">
+            <geom name="target" rgba="0.9 0.2 0.2 1" type="box" size="0.016 0.004 0.004" contype="1" conaffinity="0"/>
+            <site name="target" rgba="0.9 0.2 0.2 1" type="box" size="0.016 0.004 0.004" />
         </body>
- -->
+
+        <body name="block" pos="0.5 0.03 0.05" >
+            <geom name="block" rgba="0.2 0.2 0.9 1" type="box" size="0.01 0.01 0.01" />
+            <joint type="free" />
+        </body>
+
         <!--
                  <site name="mybox_site" pos="0 0 0" size="0.02 0.02 0.02" rgba="1 0 0 1" type="sphere"></site>
         <body name="mybox_body" pos="0.6 0.1 0.03">
@@ -148,6 +158,9 @@
     </worldbody>
     <contact>
         <pair geom1="chop" geom2="stick" solref="0.001" /> <!-- solref to low to prevent chopstick crushing into each other in sim -->
+        <pair geom1="chop" geom2="block" solref="0.001"/>
+        <pair geom1="stick" geom2="block" solref="0.001" />
+        <pair geom1="ground" geom2="block" />
         <!--<pair geom1="ground" geom2="mybox" friction="1 1 0.005 0.001 0.001" solimp="" />-->
 
         <!--
@@ -162,7 +175,7 @@
     <actuator>
 
         <!-- 24 volts from spec sheet
-        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />  
+        <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/base/X8_9"      name="base" />
         <general class="X8_16" biastype="none" biasprm="38   1.759"  joint="HEBI/shoulder/X8_16" name="shoulder" />
         <general class="X8"    biastype="none" biasprm="20   3.267"  joint="HEBI/elbow/X8_9"     name="elbow" />
         <general class="X5"    biastype="none" biasprm="2.5 14.074"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
@@ -172,7 +185,7 @@
         -->
 
         <!-- 24 volts from data -->
-        <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/base/X8_9"      name="base" />  
+        <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/base/X8_9"      name="base" />
         <general class="X8_16" biastype="none" biasprm="41.80 1.934"  joint="HEBI/shoulder/X8_16" name="shoulder" />
         <general class="X8"    biastype="none" biasprm="21.98 3.596"  joint="HEBI/elbow/X8_9"     name="elbow" />
         <general class="X5"    biastype="none" biasprm="2.98 15.481"  joint="HEBI/wrist1/X5_1"    name="wrist1" />
@@ -235,7 +248,7 @@ feb 2 sysid
 
     <!--
     <keyframe>
-      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/> 
+      <key qpos='0 0.9 1 0 0 0 -0.21      0.6 0.2 0 1 0 0 0'/>
     </keyframe>
 -->
 </mujoco>
