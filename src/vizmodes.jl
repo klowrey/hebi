@@ -46,15 +46,19 @@ function LyceumMuJoCoViz.handlers(ui::UIState, p::PhysicsState, m::HEBIManualCho
     return let ui=ui, p=p, m=m
         [
             onkey(GLFW.KEY_W, MOD_CONTROL, what = "Open Chopsticks") do s, ev
-                a = getaction(p.model)
-                a[end] = clamp(a[end] + 0.001, -1, 1)
-                setaction!(p.model, a)
+                if LyceumMuJoCoViz.ispress_or_repeat(ev.action)
+                    a = getaction(p.model)
+                    a[end] = clamp(a[end] + 0.01, -1, 1)
+                    setaction!(p.model, a)
+                end
             end,
 
             onkey(GLFW.KEY_S, MOD_CONTROL, what = "Close Chopsticks") do s, ev
-                a = getaction(p.model)
-                a[end] = clamp(a[end] - 0.001, -1, 1)
-                setaction!(p.model, a)
+                if LyceumMuJoCoViz.ispress_or_repeat(ev.action)
+                    a = getaction(p.model)
+                    a[end] = clamp(a[end] - 0.01, -1, 1)
+                    setaction!(p.model, a)
+                end
             end,
         ]
     end

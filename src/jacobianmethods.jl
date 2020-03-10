@@ -47,6 +47,9 @@ function sdls_jacctrl!(dtheta::AbsVec, jac::AbsMat, error::AbsVec; lammax::Real 
 end
 
 
+wxyz(q::Quat{T}) where {T} = SVector{4,T}(q.w, q.x, q.y, q.z)
+wxyz(r::Rotation{3}) = wxyz(Quat(r))
+
 function jacctrl(env::HebiPickup)
     # NOTE: Frames are noted by the following suffixes: w = world, c = chopstick, t = target
     posweight = 0.7
@@ -58,34 +61,34 @@ function jacctrl(env::HebiPickup)
     jacr = transpose(jacrT)
     @warn env.sim.m.nv
 
+    i = 0
     function ctrlfn(env)
         @unpack m, d, mn, dn = env.sim
 
-        MuJoCo.MJCore.mj_jacSite(m, d, vec(jacpT), vec(jacrT), 0) # not 1-based indexing??
+        MuJoCo.MJCore.mj_jacSite(m, d, vec(jacpT), vec(jacrT), 0) # TODO not 1-based indexing??
         jac = vcat(jacp, jacr)[:, 1:6]
-        #jac = jacp[:, 1:6]
         jacT = transpose(jac)
 
-        dpos = (dn.site_xpos[:, :target] - dn.site_xpos[:, :chopstick])
-        #@info "dpos" norm(dpos)
-        # so that position errors and orientation errors are of same magnitude
+        dpos = (dn.site_xpos[:, :pose] - dn.site_xpos[:, :stick])
+        #center = chopstickcenter(env)
+        #dpos = (dn.geom_xpos[:, end] - center)
+
+        wRp = RotMatrix(dn.site_xmat[:, :pose]...)'
+        wRc = RotMatrix(dn.site_xmat[:, :stick]...)'
+        wRcp = wRp * transpose(wRc)
+        #wRct = flat * transpose(wRc)
+        #drot = rotation_axis(wRct) * rotation_angle(wRct)
+        drot = rotation_axis(wRcp) * rotation_angle(wRcp)
+
         #clamp!(dpos, -0.3, 0.3)
         #clampnorm!(dpos, 0.15)
 
-        wRt = RotMatrix(dn.site_xmat[:, :target]...)'
-        wRc = RotMatrix(dn.site_xmat[:, :chopstick]...)'
-        wRct = wRt * transpose(wRc)
-        drot = rotation_axis(wRct) * rotation_angle(wRct)
-
         error = vcat(posweight * dpos, rotweight * drot)
-        #error = dpos
 
         dtheta = zeros(6)
-        sdls_jacctrl!(dtheta, jac, error, lammax=1.7)
+        sdls_jacctrl!(dtheta, jac, error, lammax=1)
         #dls_jacctrl!(dtheta, jac, error, lambda = 0.1)
         #pinv_jacctrl!(dtheta, jac, error)
-
-        #@info "jac" mean(abs, I - pinv(jac)*jac)
 
         posgain = [40, 30, 30, 30, 30, 30]
         velgain = [40, 30, 30, 30, 30, 30] .* 0.5
@@ -101,7 +104,7 @@ function jacctrl(env::HebiPickup)
 
         setaction!(env, a)
         #env.sim.d.ctrl[end] = clamp(env.sim.d.ctrl[end], -100000, 100000)
-        @info "chopstick" env.sim.d.ctrl[end]
+        #@info "chopstick" env.sim.d.ctrl[end]
 
         forward!(env.sim)
     end
