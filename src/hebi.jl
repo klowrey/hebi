@@ -109,6 +109,7 @@ end
 
 function tconstruct(::Type{HebiPickup}, n::Integer)
     modelpath = joinpath(@__DIR__, "hebi.xml")
+    #modelpath = joinpath(@__DIR__, "hebigen.xml")
     return Tuple(HebiPickup(s) for s in LyceumBase.tconstruct(MJSim, n, modelpath, skip = 20))
 end
 
@@ -151,6 +152,7 @@ LyceumBase.actionspace(env::HebiPickup) = env.asp
     env.ctrl .= a
 
 
+    # when commanding end-effector velocities
     efc, chop = a[1:6], a[7]
     jacpT = zeros(Int(env.sim.m.nv), 3)
     jacrT = zeros(Int(env.sim.m.nv), 3)
@@ -159,10 +161,6 @@ LyceumBase.actionspace(env::HebiPickup) = env.asp
 
     dtheta = zeros(6)
     sdls_jacctrl!(dtheta, jac, efc, lammax = 75)
-    #dls_jacctrl!(dtheta, jac, efc, lambda = 0.1)
-    #velgain = [40, 30, 30, 30, 30, 30]
-    #clamp!(dtheta, -0.25, 0.25)
-    #dtheta = velgain .* dtheta #.+ -2.5 * d.qvel[1:6]
 
     dtheta[1:3] .= 1 * (dtheta[1:3] - d.qvel[1:3]) - 0.005 * d.qacc[1:3]
     dtheta[4:end] .= 10 * (dtheta[4:end] - d.qvel[4:6]) - 0.005 * d.qacc[4:6]
@@ -174,6 +172,7 @@ LyceumBase.actionspace(env::HebiPickup) = env.asp
 
     a = ctrl
 
+
     maxtorque = _splat7(m.actuator_biasprm, 1)
     speed_24v = _splat7(m.actuator_biasprm, 2)
     qvel = _splat7(d.qvel)
@@ -183,6 +182,9 @@ LyceumBase.actionspace(env::HebiPickup) = env.asp
 
     env
 end
+
+
+
 
 LyceumMuJoCo.getaction!(a, env::HebiPickup) = copyto!(a, env.ctrl)
 
@@ -234,7 +236,7 @@ end
         d.qvel[i] = clamp(d.qvel[i], -vellimits[i], vellimits[i])
     end
 
-    step!(env.sim)
+    LyceumBase.step!(env.sim)
 end
 
 @propagate_inbounds function LyceumMuJoCo.getreward(state, action, obs, env::HebiPickup)
@@ -246,10 +248,10 @@ end
 
     dclosed, dopen = 0.005, 0.03
 
+    reward -= 1 * osh.d_obj2goal
     if osh.ispickedup == 1.0
         reward += 1
-        reward -= 1 * osh.d_obj2goal
-        reward -= 0.1 * sqrt(osh.d_obj2goal)
+        #reward -= 0.1 * sqrt(osh.d_obj2goal)
         reward -= 5 * sqrt(osh.d_chopcenterpos2obj)
     elseif osh.d_chopcenterpos2obj < 0.03
         # start clamping

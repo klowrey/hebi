@@ -31,8 +31,8 @@ using SharedArrays
 include("hebi.jl")
 include("util.jl")
 include("vizmodes.jl")
-include("controls.jl")
 include("jacobianmethods.jl")
+include("controls.jl")
 
 
 
