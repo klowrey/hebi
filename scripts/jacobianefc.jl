@@ -1,34 +1,10 @@
-function hebiMPPI(env_tconstructor = n -> Tuple(HebiPickup() for _=1:n))
-    env = first(env_tconstructor(1))
-    a = getaction(env)
-    sigma = zeros(7) #TODO
-    sigma[1:3] .= 0.15
-    sigma[4:6] .= 0.15
-    sigma[end] = 0.05
-    mppi = MPPI(
-        env_tconstructor = env_tconstructor,
-        covar = Diagonal(sigma .^ 2),
-        lambda = 0.05,
+include("common.jl")
 
-        H = 50,
-        K = 16,
-        gamma = 1.0,
-    )
+function viz_jacobianefc()
+    env = HEBI.HEBIPickup(action_mode=:joint_torque)
 
-    a = allocate(actionspace(env))
-    o = allocate(obsspace(env))
-    s = allocate(statespace(env))
-    ctrlfn = @closure env -> begin
-        getstate!(s, env)
-        getaction!(a, s, mppi)
-        setaction!(env, a)
-    end
+     # NOTE: Frames are noted by the following suffixes: w = world, c = chopstick, p = pose # TODO move this
 
-    visualize(env, controller=ctrlfn)
-end
-
-function hebi_jac(env::HebiPickup)
-    # NOTE: Frames are noted by the following suffixes: w = world, c = chopstick, t = target
     posweight = 0.7
     rotweight = 1 - posweight
 
@@ -36,10 +12,9 @@ function hebi_jac(env::HebiPickup)
     jacrT = zeros(env.sim.m.nv, 3)
     jacp = transpose(jacpT)
     jacr = transpose(jacrT)
-    @warn env.sim.m.nv
 
     i = 0
-    function ctrlfn(env)
+    ctrlfn = @closure env -> begin
         @unpack m, d, mn, dn = env.sim
 
         MuJoCo.MJCore.mj_jacSite(m, d, vec(jacpT), vec(jacrT), 0) # TODO not 1-based indexing??
@@ -47,14 +22,10 @@ function hebi_jac(env::HebiPickup)
         jacT = transpose(jac)
 
         dpos = (dn.site_xpos[:, :pose] - dn.site_xpos[:, :stick])
-        #center = chopstickcenter(env)
-        #dpos = (dn.geom_xpos[:, end] - center)
 
         wRp = RotMatrix(dn.site_xmat[:, :pose]...)'
         wRc = RotMatrix(dn.site_xmat[:, :stick]...)'
         wRcp = wRp * transpose(wRc)
-        #wRct = flat * transpose(wRc)
-        #drot = rotation_axis(wRct) * rotation_angle(wRct)
         drot = rotation_axis(wRcp) * rotation_angle(wRcp)
 
         #clamp!(dpos, -0.3, 0.3)
@@ -63,7 +34,7 @@ function hebi_jac(env::HebiPickup)
         error = vcat(posweight * dpos, rotweight * drot)
 
         dtheta = zeros(6)
-        sdls_jacctrl!(dtheta, jac, error, lammax=1)
+        HEBI.sdls_jacctrl!(dtheta, jac, error, lammax = 1)
         #dls_jacctrl!(dtheta, jac, error, lambda = 0.1)
         #pinv_jacctrl!(dtheta, jac, error)
 
@@ -80,11 +51,9 @@ function hebi_jac(env::HebiPickup)
         a[1:6] .= ctrl
 
         setaction!(env, a)
-        #env.sim.d.ctrl[end] = clamp(env.sim.d.ctrl[end], -100000, 100000)
-        #@info "chopstick" env.sim.d.ctrl[end]
 
-        forward!(env.sim)
+        forward!(env.sim) # TODO
     end
-    visualize(env, HEBIManualChop(ctrlfn))
-end
 
+    visualize(env, controller = ctrlfn)
+end

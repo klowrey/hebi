@@ -25,8 +25,8 @@ two different motors.
 
 ```julia
 julia> include("src/runhebi.jl")
-julia> h = HebiPickup()
-julia> h2 = HebiPickup()
+julia> h = HEBIPickup()
+julia> h2 = HEBIPickup()
 julia> a = getsincontrols(h, 2000)
 julia> result = testsysid(h, h2, a; optm=:LBFGS)
 julia> result.minimizer
@@ -48,7 +48,7 @@ graddient function that uses multi-threading. It may be currently buggy.
 
 ```julia
 julia> include("src/runhebi.jl")
-julia> h = HebiPickup()
+julia> h = HEBIPickup()
 julia> dt, pos, vel, act, eff = datafile("data/example2.csv")
 julia> result = filesysid(vcat(pos, vel), h, act; optm=:LBFGS, batch=6000:10000)
 julia> hebivars = gethebivars()

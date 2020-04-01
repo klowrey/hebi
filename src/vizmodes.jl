@@ -1,9 +1,18 @@
-using LyceumMuJoCoViz: EngineMode, UIState, PhysicsState, default_windowsize, PassiveDynamics, Engine, onkey, GLFW, MOD_CONTROL
+using LyceumMuJoCoViz:
+    EngineMode,
+    UIState,
+    PhysicsState,
+    default_windowsize,
+    PassiveDynamics,
+    Engine,
+    onkey,
+    GLFW,
+    MOD_CONTROL
 
 function LyceumMuJoCoViz.visualize(
     model::Union{AbstractString,MJSim,AbstractMuJoCoEnvironment},
     modes::EngineMode...;
-    windowsize::NTuple{2,Integer} = default_windowsize()
+    windowsize::NTuple{2,Integer} = default_windowsize(),
 )
     model isa AbstractString && (model = MJSim(model))
     reset!(model)
@@ -43,7 +52,7 @@ function LyceumMuJoCoViz.modeinfo(io1, io2, ui::UIState, p::PhysicsState, x::HEB
 end
 
 function LyceumMuJoCoViz.handlers(ui::UIState, p::PhysicsState, m::HEBIManualChop)
-    return let ui=ui, p=p, m=m
+    return let ui = ui, p = p, m = m
         [
             onkey(GLFW.KEY_W, MOD_CONTROL, what = "Open Chopsticks") do s, ev
                 if LyceumMuJoCoViz.ispress_or_repeat(ev.action)
@@ -52,7 +61,6 @@ function LyceumMuJoCoViz.handlers(ui::UIState, p::PhysicsState, m::HEBIManualCho
                     setaction!(p.model, a)
                 end
             end,
-
             onkey(GLFW.KEY_S, MOD_CONTROL, what = "Close Chopsticks") do s, ev
                 if LyceumMuJoCoViz.ispress_or_repeat(ev.action)
                     a = getaction(p.model)
