@@ -9,6 +9,7 @@ function transpose_jacctrl!(dtheta::AbsVec, jac::AbsMat, error::AbsVec)
 end
 
 function sdls_jacctrl!(dtheta::AbsVec, jac::AbsMat, error::AbsVec; lammax::Real = pi / 8)
+    fill!(dtheta, 0)
     dofefc, nv = size(jac)
     u, s, v = svd(jac)
 

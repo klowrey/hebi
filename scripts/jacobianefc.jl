@@ -3,17 +3,19 @@ include("common.jl")
 function viz_jacobianefc()
     env = HEBI.HEBIPickup(action_mode=:joint_torque)
 
-     # NOTE: Frames are noted by the following suffixes: w = world, c = chopstick, p = pose # TODO move this
+    @assert length(actionspace(env)) == 7
+    T = eltype(actionspace(env))
 
-    posweight = 0.7
-    rotweight = 1 - posweight
+    posweight = T(0.7)
+    rotweight = T(1 - posweight)
 
-    jacpT = zeros(env.sim.m.nv, 3)
-    jacrT = zeros(env.sim.m.nv, 3)
+    jacpT = zeros(T, env.sim.m.nv, 3)
+    jacrT = zeros(T, env.sim.m.nv, 3)
     jacp = transpose(jacpT)
     jacr = transpose(jacrT)
+    dtheta = zeros(T, 6)
+    action = zeros(actionspace(env))
 
-    i = 0
     ctrlfn = @closure env -> begin
         @unpack m, d, mn, dn = env.sim
 
@@ -28,31 +30,15 @@ function viz_jacobianefc()
         wRcp = wRp * transpose(wRc)
         drot = rotation_axis(wRcp) * rotation_angle(wRcp)
 
-        #clamp!(dpos, -0.3, 0.3)
-        #clampnorm!(dpos, 0.15)
-
         error = vcat(posweight * dpos, rotweight * drot)
 
-        dtheta = zeros(6)
         HEBI.sdls_jacctrl!(dtheta, jac, error, lammax = 1)
-        #dls_jacctrl!(dtheta, jac, error, lambda = 0.1)
-        #pinv_jacctrl!(dtheta, jac, error)
 
-        posgain = [40, 30, 30, 30, 30, 30]
-        velgain = [40, 30, 30, 30, 30, 30] .* 0.5
-        accgain = -ones(6) .* 0.1
-
+        getaction!(action, env) # we don't want to overwrite the chopstick command
         clamp!(dtheta, -0.25, 0.25)
+        action[1:6] .= 40 .* dtheta .+ -2.5 .* d.qvel[1:6]
 
-        #ctrl = velgain .* -(d.qvel[1:6] - dtheta) #.+ accgain .* d.qacc[1:6]
-        ctrl = posgain .* dtheta .+ -2.5 * d.qvel[1:6]
-        clamp!(ctrl, -1.0, 1.0)
-        a = getaction(env)
-        a[1:6] .= ctrl
-
-        setaction!(env, a)
-
-        forward!(env.sim) # TODO
+        setaction!(env, action)
     end
 
     visualize(env, controller = ctrlfn)

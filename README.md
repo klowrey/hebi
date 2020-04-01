@@ -1,5 +1,7 @@
 # hebi
 
+# NOTE: Frames are noted by the following suffixes: w = world, c = chopstick, p = pose # TODO
+
 ROS is bad.
 
 # Setup
