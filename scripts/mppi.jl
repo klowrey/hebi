@@ -1,7 +1,7 @@
-include("common.jl")
+include("common/common.jl")
 
 function viz_mppi()
-    env = HEBI.HEBIPickup(action_mode=:efc_vel)
+    env = HEBI.HEBIPickup(action_mode = :efc_vel)
 
     sigma = zeros(actionspace(env))
     @assert length(sigma) == 7
@@ -10,7 +10,7 @@ function viz_mppi()
     sigma[end] = 0.05
 
     mppi = MPPI(
-        env_tconstructor = n -> Tuple(HEBI.HEBIPickup(action_mode=:efc_vel) for _ = 1:n),
+        env_tconstructor = n -> Tuple(HEBI.HEBIPickup(action_mode = :efc_vel) for _ = 1:n),
         covar = Diagonal(sigma .^ 2),
         lambda = 0.05,
         H = 50,

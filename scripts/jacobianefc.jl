@@ -1,7 +1,7 @@
-include("common.jl")
+include("common/common.jl")
 
 function viz_jacobianefc()
-    env = HEBI.HEBIPickup(action_mode=:joint_torque)
+    env = HEBI.HEBIPickup(action_mode = :joint_torque)
 
     @assert length(actionspace(env)) == 7
     T = eltype(actionspace(env))
@@ -41,5 +41,5 @@ function viz_jacobianefc()
         setaction!(env, action)
     end
 
-    visualize(env, controller = ctrlfn)
+    visualize(env, HEBIManualChop(ctrlfn))
 end

@@ -1,3 +1,4 @@
+using Distributions
 using FastClosures
 using LinearAlgebra
 using LyceumAI
@@ -6,10 +7,13 @@ using LyceumMuJoCo
 using LyceumMuJoCoViz
 using MuJoCo
 using Parameters
+using Printf
 using Rotations
 using Shapes
-using InteractiveUtils
+using UnsafeArrays
+
+using HEBI
 
 
-include("../src/HEBI.jl")
-
+include("hebimanualchop.jl")
+include("util.jl")

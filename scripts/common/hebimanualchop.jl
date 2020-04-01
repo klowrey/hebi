@@ -1,14 +1,8 @@
-using LyceumMuJoCoViz:
-    EngineMode,
-    UIState,
-    PhysicsState,
-    default_windowsize,
-    PassiveDynamics,
-    Engine,
-    onkey,
-    GLFW,
-    MOD_CONTROL
+using GLFW
+using LyceumMuJoCoViz: Engine, EngineMode, UIState, PhysicsState, PassiveDynamics
+using LyceumMuJoCoViz: MOD_CONTROL, default_windowsize, onkey
 
+# TODO move into LyceumMuJoCoViz
 function LyceumMuJoCoViz.visualize(
     model::Union{AbstractString,MJSim,AbstractMuJoCoEnvironment},
     modes::EngineMode...;
@@ -19,7 +13,8 @@ function LyceumMuJoCoViz.visualize(
 
     modes = EngineMode[PassiveDynamics(), modes...]
     LyceumMuJoCoViz.run(Engine(windowsize, model, Tuple(modes)))
-    return
+
+    return nothing
 end
 
 mutable struct HEBIManualChop{F} <: EngineMode

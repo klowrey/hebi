@@ -23,7 +23,7 @@ struct HEBIPickup{ActionMode,Sim<:MJSim,A,O} <: AbstractMuJoCoEnvironment
 
         if action_mode === :efc_vel
             asp = MultiShape(efc = VectorShape(Float64, 6), chop = ScalarShape(Float64))
-        elseif  action_mode === :joint_torque
+        elseif action_mode === :joint_torque
             asp = actionspace(sim)
         else
             error("action_mode must be one of (:efc_vel, :joint_torque). Got: :$action_mode.")
@@ -54,13 +54,12 @@ function LyceumMuJoCo.reset!(env::HEBIPickup)
 end
 
 function LyceumMuJoCo.randreset!(rng::Random.AbstractRNG, env::HEBIPickup)
-    # TODO
-    reset_nofwd!(env.sim)
-    d = env.sim.d
-    d.qpos[end-2] = rand(rng, Uniform(0.4, 0.7))
-    d.qpos[end-1] = rand(rng, Uniform(-0.3, 0.3))
+    dn = env.sim.dn
+    reset!(env)
+    dn.qpos[:obj_x] += rand(rng, Uniform(-0.1, 0.1))
+    dn.qpos[:obj_y] += rand(rng, Uniform(-0.2, 0.2))
     forward!(env.sim)
-    env
+    return env
 end
 
 
@@ -119,9 +118,7 @@ function LyceumMuJoCo.getobs!(obs, env::HEBIPickup)
 
     obj = dn.geom_xpos[:, :obj]
     goal = dn.site_xpos[:, :goal]
-
     chopcenterpos = chopstickcenter(env)
-
     wRc = RotMatrix(dn.site_xmat[:, :chop]...)'
 
     @uviews obs @inbounds begin
@@ -148,27 +145,22 @@ end
 
 function LyceumMuJoCo.step!(env::HEBIPickup)
     @unpack m, d = env.sim
-
     # approximately calculated velocity limits from data; spec sheet isn't accurate
     vel_limits = SVector{7,Float64}(3.596, 1.934, 3.596, 10.79, 10.79, 10.79, 10.79)
-
     for i = 1:m.nu # only limit the hebi actuators, nothing else
         d.qvel[i] = clamp(d.qvel[i], -vel_limits[i], vel_limits[i])
     end
-
-    LyceumBase.step!(env.sim)
-
+    step!(env.sim)
     return env
 end
 
 function LyceumMuJoCo.getreward(state, action, obs, env::HEBIPickup)
     @unpack m, d, mn, dn = env.sim
     osh = obsspace(env)(obs)
+    dclosed, dopen = 0.005, 0.03
 
     reward = 0.0
     reward -= 1 * osh.d_chopcenterpos2obj
-
-    dclosed, dopen = 0.005, 0.03
 
     reward -= 1 * osh.d_obj2goal
     if osh.ispickedup == 1.0
@@ -189,6 +181,7 @@ end
 LyceumMuJoCo.geteval(state, action, obs, env::HEBIPickup) = 0
 
 @inline LyceumMuJoCo.getsim(env::HEBIPickup) = env.sim
+
 
 ####
 #### Util
